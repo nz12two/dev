@@ -171,6 +171,17 @@ nav {
   background: rgba(10, 10, 10, 0.8);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(77, 166, 255, 0.1);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+nav.hide {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+nav.show {
+  transform: translateY(0);
+  opacity: 1;
 }
 
 .nav-container {
