@@ -1,4 +1,3 @@
-// Inicializa tudo
 document.addEventListener("DOMContentLoaded", () => {
   initTyping();
   initParticles();
@@ -12,9 +11,34 @@ document.addEventListener("DOMContentLoaded", () => {
   createWaveEffect();
   initTextReveal();
   initGlowScroll();
+  initSmartNavbar(); 
 });
 
-// Typing effect
+function initSmartNavbar() {
+  const nav = document.querySelector("nav");
+  if (!nav) return;
+
+  let lastScroll = 0;
+
+  window.addEventListener("scroll", () => {
+    const currentScroll = window.pageYOffset;
+
+    if (currentScroll <= 0) {
+      nav.classList.remove("hide");
+      return;
+    }
+
+    if (currentScroll > lastScroll && currentScroll > 120) {
+      nav.classList.add("hide");
+    } else {
+      nav.classList.remove("hide");
+    }
+
+    lastScroll = currentScroll;
+  });
+}
+
+
 function initTyping() {
   const el = document.querySelector(".typing");
   if (!el) return;
@@ -23,6 +47,7 @@ function initTyping() {
 
   function type() {
     let word = words[i];
+
     if (deleting) {
       j--;
       el.textContent = word.substring(0, j);
@@ -47,6 +72,7 @@ function initTyping() {
 
   type();
 }
+
 
 // Particles.js
 function initParticles() {
@@ -77,9 +103,11 @@ function initParticles() {
   });
 
   window.addEventListener('scroll', () => {
-    document.getElementById('particles-js').style.transform = `translateY(${window.scrollY * 0.03}px)`;
+    document.getElementById('particles-js').style.transform =
+      `translateY(${window.scrollY * 0.03}px)`;
   });
 }
+
 
 // GitHub Projects
 async function initProjects() {
@@ -96,80 +124,109 @@ async function initProjects() {
     container.innerHTML = "";
 
     repos.forEach(r => {
+
       const card = document.createElement("div");
       card.className = "card";
+
       const imgUrl = `https://opengraph.githubassets.com/1/${username}/${r.name}`;
 
       card.innerHTML = `
-        <img src="${imgUrl}" alt="${r.name}" onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(r.name)}'">
+        <img src="${imgUrl}" alt="${r.name}" 
+        onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(r.name)}'">
         <h3>${r.name}</h3>
         <p>${r.description || "Projeto disponível no GitHub"}</p>
-        <a href="${r.html_url}" target="_blank"><i class="fab fa-github"></i> Ver Projeto</a>
+        <a href="${r.html_url}" target="_blank">
+        <i class="fab fa-github"></i> Ver Projeto</a>
       `;
 
       card.addEventListener('click', e => {
-        if (!e.target.closest('a')) window.open(r.html_url, '_blank');
+        if (!e.target.closest('a'))
+          window.open(r.html_url, '_blank');
       });
 
       container.appendChild(card);
     });
+
   } catch (e) {
     console.error(e);
     container.innerHTML = "<p>Erro ao carregar projetos.</p>";
   }
 }
 
-// Sections Observer
+
 function initSectionsObserver() {
+
   const sections = document.querySelectorAll("section");
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (e.isIntersecting) e.target.classList.add("show");
+      if (e.isIntersecting)
+        e.target.classList.add("show");
     });
   }, { threshold: 0.2 });
 
   sections.forEach(s => observer.observe(s));
 }
 
+
 // Smooth Scroll
 function initSmoothScroll() {
+
   document.querySelectorAll('a[href^="#"]').forEach(a => {
+
     a.addEventListener('click', e => {
+
       e.preventDefault();
+
       const t = document.querySelector(a.getAttribute('href'));
-      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      if (t)
+        t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     });
+
   });
+
 }
 
-// Terminal
+
 function initTerminal() {
+
   const input = document.getElementById("terminal-command");
   const output = document.getElementById("terminal-output");
 
   if (!input || !output) return;
 
   const cmds = {
+
     help: `help → comandos disponíveis
-    about → sobre mim
-    skills → tecnologias
-    projects → projetos
-    github → GitHub
-    contato → contato
-    whoami → quem sou eu
-    clear → limpa terminal`,
+about → sobre mim
+skills → tecnologias
+projects → projetos
+github → GitHub
+contato → contato
+whoami → quem sou eu
+clear → limpa terminal`,
+
     about: "Desenvolvedor focado em automação, bots e Minecraft. Sempre aprendendo novas tecnologias.",
+
     skills: "Python, JS/Node.js, HTML, CSS, Banco de Dados, Discord Bots, Minecraft Systems, Git & Linux",
+
     projects: "Discord Bots, Sistemas Minecraft, APIs REST, Dashboards interativos",
+
     github: "https://github.com/nz12two",
+
     contato: "Email: nzjr123@gmail.com | GitHub: @nz12two",
+
     whoami: "> NZ - Desenvolvedor Full Stack"
-};
+  };
 
   input.addEventListener('keydown', e => {
+
     if (e.key !== "Enter") return;
 
     const cmd = input.value.toLowerCase().trim();
+
     if (!cmd) return;
 
     output.innerHTML += `<div style="color:#4da6ff;">$ ${input.value}</div>`;
@@ -177,25 +234,33 @@ function initTerminal() {
     if (cmd === "clear") {
       output.innerHTML = "";
     } else {
-      output.innerHTML += `<div>${cmds[cmd] || "Comando não encontrado. Digite 'help' para ver os comandos disponíveis."}</div>`;
+      output.innerHTML += `<div>${cmds[cmd] || "Comando não encontrado."}</div>`;
     }
 
     input.value = "";
     output.scrollTop = output.scrollHeight;
+
   });
+
 }
 
-// Efeito de parallax suave no mouse
 function initMouseParallax() {
-  let mouseX = 0, mouseY = 0;
-  let targetX = 0, targetY = 0;
+
+  let mouseX = 0;
+  let mouseY = 0;
+
+  let targetX = 0;
+  let targetY = 0;
 
   document.addEventListener('mousemove', (e) => {
+
     targetX = (e.clientX / window.innerWidth - 0.5) * 2;
     targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+
   });
 
   function animate() {
+
     mouseX += (targetX - mouseX) * 0.05;
     mouseY += (targetY - mouseY) * 0.05;
 
@@ -203,17 +268,17 @@ function initMouseParallax() {
     const heroTitle = document.querySelector('.hero h1');
     const particles = document.getElementById('particles-js');
 
-    if (profileImg) {
-      profileImg.style.transform = `translate(${mouseX * 15}px, ${mouseY * 15}px)`;
-    }
+    if (profileImg)
+      profileImg.style.transform =
+        `translate(${mouseX * 15}px, ${mouseY * 15}px)`;
 
-    if (heroTitle) {
-      heroTitle.style.transform = `translate(${mouseX * 8}px, ${mouseY * 8}px)`;
-    }
+    if (heroTitle)
+      heroTitle.style.transform =
+        `translate(${mouseX * 8}px, ${mouseY * 8}px)`;
 
-    if (particles) {
-      particles.style.transform = `translate(${mouseX * 20}px, ${mouseY * 20}px)`;
-    }
+    if (particles)
+      particles.style.transform =
+        `translate(${mouseX * 20}px, ${mouseY * 20}px)`;
 
     requestAnimationFrame(animate);
   }
@@ -221,13 +286,17 @@ function initMouseParallax() {
   animate();
 }
 
-// Efeito de brilho nos cards ao passar o mouse
+
 function initCardGlow() {
+
   const cards = document.querySelectorAll('.card, .stack div');
 
   cards.forEach(card => {
+
     card.addEventListener('mousemove', (e) => {
+
       const rect = card.getBoundingClientRect();
+
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
@@ -237,92 +306,75 @@ function initCardGlow() {
       const angleX = (y - centerY) / 25;
       const angleY = (centerX - x) / 25;
 
-      card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.transform =
+        `perspective(1000px)
+        rotateX(${angleX}deg)
+        rotateY(${angleY}deg)
+        scale3d(1.02,1.02,1.02)`;
+
     });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+
+      card.style.transform =
+        'perspective(1000px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+
     });
+
   });
+
 }
 
-// Efeito de digitação com cursor mais elaborado
 function enhanceTyping() {
+
   const cursor = document.querySelector('.cursor');
+
   if (!cursor) return;
 
   setInterval(() => {
-    cursor.style.opacity = cursor.style.opacity === '1' ? '0.3' : '1';
+
+    cursor.style.opacity =
+      cursor.style.opacity === '1' ? '0.3' : '1';
+
   }, 500);
+
 }
 
-// Efeito de ondas no fundo (já implementado no CSS)
-function createWaveEffect() {
-  // Já implementado no CSS com #particles-js::after
-}
 
-// Efeito de revelação de texto nas seções
-function initTextReveal() {
-  const titles = document.querySelectorAll('section h2');
-
-  titles.forEach(title => {
-    const text = title.textContent;
-    title.innerHTML = '';
-
-    [...text].forEach((char, i) => {
-      const span = document.createElement('span');
-      span.textContent = char;
-      span.style.opacity = '0';
-      span.style.transform = 'translateY(20px)';
-      span.style.display = 'inline-block';
-      span.style.transition = `all 0.3s ease ${i * 0.05}s`;
-      title.appendChild(span);
-    });
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.querySelectorAll('span').forEach(span => {
-            span.style.opacity = '1';
-            span.style.transform = 'translateY(0)';
-          });
-        }
-      });
-    }, { threshold: 0.5 });
-
-    observer.observe(title);
-  });
-}
-
-// Efeito de brilho no scroll
+// Scroll Glow
 function initGlowScroll() {
+
   const glow = document.getElementById('glowScroll');
+
   if (!glow) return;
 
   window.addEventListener('scroll', () => {
-    const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+
+    const scrollPercent =
+      (window.scrollY /
+        (document.documentElement.scrollHeight - window.innerHeight)) * 100;
 
     if (scrollPercent > 5) {
+
       glow.classList.add('show');
-      glow.style.background = `linear-gradient(90deg, 
-        transparent, 
-        var(--glow-color) ${scrollPercent}%, 
-        var(--glow-color) ${scrollPercent + 10}%, 
+
+      glow.style.background =
+        `linear-gradient(90deg,
+        transparent,
+        var(--glow-color) ${scrollPercent}%,
+        var(--glow-color) ${scrollPercent + 10}%,
         transparent)`;
+
     } else {
+
       glow.classList.remove('show');
+
     }
+
   });
+
 }
 
-// Efeito de loading suave para imagens
-document.addEventListener('load', function (e) {
-  if (e.target.tagName === 'IMG') {
-    e.target.style.opacity = '1';
-  }
-}, true);
-
-// Previne comportamento padrão de arrastar imagens
 document.querySelectorAll('img').forEach(img => {
   img.addEventListener('dragstart', (e) => e.preventDefault());
 });
