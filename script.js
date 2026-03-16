@@ -150,14 +150,21 @@ function initTerminal() {
   if (!input || !output) return;
 
   const cmds = {
-    help: "help → comandos disponíveis\nabout → sobre mim\nskills → tecnologias\nprojects → projetos\ngithub → GitHub\ncontato → contato\nwhoami → quem sou eu\nclear → limpa terminal",
+    help: `help → comandos disponíveis
+    about → sobre mim
+    skills → tecnologias
+    projects → projetos
+    github → GitHub
+    contato → contato
+    whoami → quem sou eu
+    clear → limpa terminal`,
     about: "Desenvolvedor focado em automação, bots e Minecraft. Sempre aprendendo novas tecnologias.",
     skills: "Python, JS/Node.js, HTML, CSS, Banco de Dados, Discord Bots, Minecraft Systems, Git & Linux",
     projects: "Discord Bots, Sistemas Minecraft, APIs REST, Dashboards interativos",
     github: "https://github.com/nz12two",
     contato: "Email: nzjr123@gmail.com | GitHub: @nz12two",
     whoami: "> NZ - Desenvolvedor Full Stack"
-  };
+};
 
   input.addEventListener('keydown', e => {
     if (e.key !== "Enter") return;
