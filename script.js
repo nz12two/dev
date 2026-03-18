@@ -99,9 +99,6 @@ function initTyping() {
   }
 
   type();
-
-  // Cleanup potencial
-  return () => clearTimeout(timeout);
 }
 
 // ============================================
@@ -118,7 +115,14 @@ function initParticles() {
       opacity: { value: 0.3, random: true, anim: { enable: true, speed: 1, opacity_min: 0.1 } },
       size: { value: 3, random: true, anim: { enable: true, speed: 2, size_min: 0.1 } },
       line_linked: { enable: true, distance: 150, color: "#4da6ff", opacity: 0.2, width: 1 },
-      move: { enable: true, speed: 1, random: true, straight: false, out_mode: "bounce" }
+      move: { 
+        enable: true, 
+        speed: 1, 
+        random: true, 
+        straight: false, 
+        out_mode: "bounce",
+        attract: { enable: false }
+      }
     },
     interactivity: {
       events: {
@@ -133,20 +137,6 @@ function initParticles() {
     },
     retina_detect: true
   });
-
-  let ticking = false;
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        const particles = document.getElementById('particles-js');
-        if (particles) {
-          particles.style.transform = `translateY(${window.scrollY * 0.03}px)`;
-        }
-        ticking = false;
-      });
-      ticking = true;
-    }
-  });
 }
 
 // ============================================
@@ -159,9 +149,8 @@ async function initProjects() {
   const username = "nz12two";
   const CACHE_KEY = 'github_projects';
   const CACHE_TIME_KEY = 'github_projects_time';
-  const CACHE_DURATION = 3600000; // 1 hora
+  const CACHE_DURATION = 3600000;
 
-  // Verificar cache
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
@@ -174,14 +163,12 @@ async function initProjects() {
     console.warn('Erro ao ler cache:', e);
   }
 
-  // Buscar novos projetos
   try {
     const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=6`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
     const repos = await res.json();
     
-    // Salvar no cache
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(repos));
       localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
@@ -315,10 +302,8 @@ function initTerminal() {
     const cmd = input.value.trim().toLowerCase();
     if (!cmd) return;
 
-    // Mostrar comando digitado
     output.innerHTML += `<div style="color:#4da6ff; margin-top: 8px;">$ ${input.value}</div>`;
 
-    // Processar comando
     if (cmd === "clear") {
       output.innerHTML = "";
     } else if (commands[cmd]) {
@@ -365,13 +350,6 @@ function initMouseParallax() {
   }
 
   animate();
-
-  // Cleanup
-  return () => {
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-    }
-  };
 }
 
 // ============================================
@@ -379,11 +357,11 @@ function initMouseParallax() {
 // ============================================
 function initCardGlow() {
   const cards = document.querySelectorAll('.card, .stack div');
-  let rafId = null;
 
   cards.forEach(card => {
     let mouseX = 0, mouseY = 0;
     let targetX = 0, targetY = 0;
+    let rafId = null;
 
     card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
@@ -400,6 +378,10 @@ function initCardGlow() {
       targetX = 0;
       targetY = 0;
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
     });
 
     function animate() {
@@ -413,12 +395,6 @@ function initCardGlow() {
 
     animate();
   });
-
-  return () => {
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-    }
-  };
 }
 
 // ============================================
@@ -485,47 +461,49 @@ function initChatBot() {
 
   if (!btn || !chat || !input || !messages) return;
 
-  // Gerenciar SESSION ID
   let sessionId = localStorage.getItem('chat_session_id');
   if (!sessionId) {
     sessionId = crypto.randomUUID ? crypto.randomUUID() : 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('chat_session_id', sessionId);
   }
-  console.log('🆔 Sessão:', sessionId);
 
-  // Abrir chat
   btn.onclick = () => {
     chat.style.display = "flex";
     input.focus();
   };
 
-  // Fechar chat
   if (closeBtn) {
     closeBtn.onclick = () => {
       chat.style.display = "none";
     };
   }
 
-  // Função para adicionar mensagem
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function addMessage(text, fromAI = true) {
     const wrapper = document.createElement("div");
     wrapper.className = `message-wrapper ${fromAI ? 'bot' : 'user'}`;
     
     const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const escapedText = escapeHtml(text);
     
     if (fromAI) {
       wrapper.innerHTML = `
         <div class="bot-avatar-small">NZ</div>
         <div class="message-content">
           <div class="bot-name-tag">NZ Assistant</div>
-          <div class="message-bubble">${escapeHtml(text)}</div>
+          <div class="message-bubble" style="word-break: break-word; white-space: pre-wrap;">${escapedText}</div>
           <div class="message-time">${time}</div>
         </div>
       `;
     } else {
       wrapper.innerHTML = `
         <div class="message-content">
-          <div class="message-bubble">${escapeHtml(text)}</div>
+          <div class="message-bubble" style="word-break: break-word; white-space: pre-wrap;">${escapedText}</div>
           <div class="message-time">${time}</div>
         </div>
       `;
@@ -535,14 +513,6 @@ function initChatBot() {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  // Função para escapar HTML
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  // Typing indicator
   function showTypingIndicator() {
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper bot";
@@ -569,20 +539,14 @@ function initChatBot() {
     }
   }
 
-  // Notificação de salvamento
   function showSaveNotification(message, isSuccess = true) {
     const notification = document.createElement('div');
     notification.className = 'save-notification';
     notification.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
-    
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
   }
 
-  // Validadores
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
@@ -591,10 +555,8 @@ function initChatBot() {
     return /^\(?[1-9]{2}\)? ?9?[0-9]{4}-?[0-9]{4}$/.test(phone.replace(/\D/g, ''));
   }
 
-  // Histórico da conversa
   let conversationHistory = [];
 
-  // Mensagem inicial
   setTimeout(async () => {
     showTypingIndicator();
 
@@ -620,9 +582,7 @@ function initChatBot() {
       clearTimeout(timeoutId);
       removeTypingIndicator();
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const result = await res.json();
       const botReply = result.reply || "Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊";
@@ -637,7 +597,6 @@ function initChatBot() {
     }
   }, 500);
 
-  // Enviar mensagem
   async function sendMessage() {
     const value = input.value.trim();
     if (!value) return;
@@ -675,9 +634,7 @@ function initChatBot() {
         return;
       }
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const result = await res.json();
       const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
@@ -685,7 +642,6 @@ function initChatBot() {
       addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
 
-      // Salvar lead se necessário
       if (result.is_lead || result.should_save) {
         await saveLead(result, value);
       }
@@ -695,16 +651,13 @@ function initChatBot() {
       removeTypingIndicator();
       
       if (err.name === 'AbortError') {
-        console.error("Timeout da requisição");
         addMessage("⏰ A resposta está demorando. Por favor, tente novamente ou chame NZ no WhatsApp (71) 92227-288", true);
       } else {
-        console.error("Erro no chat:", err);
         addMessage("❌ Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
       }
     }
   }
 
-  // Salvar lead no Supabase
   async function saveLead(result, lastMessage) {
     if (!supabaseClient) {
       console.warn('Supabase não disponível - lead não salvo');
@@ -727,19 +680,16 @@ function initChatBot() {
         notes: `Conversa: ${conversationHistory.length} mensagens`
       };
 
-      // Validar email se existir
       if (leadData.email && !isValidEmail(leadData.email)) {
         console.warn('Email inválido, não salvando');
         return;
       }
 
-      // Validar telefone se existir
       if (leadData.phone && !isValidPhone(leadData.phone)) {
         console.warn('Telefone inválido, não salvando');
         return;
       }
 
-      // Verificar se lead já existe por email ou session_id
       let existingLead = null;
       
       if (leadData.email) {
@@ -753,7 +703,6 @@ function initChatBot() {
       }
 
       if (existingLead) {
-        // Atualizar lead existente
         const { error } = await supabaseClient
           .from('leads')
           .update({
@@ -772,7 +721,6 @@ function initChatBot() {
         showSaveNotification('✅ Informações atualizadas!', true);
         
       } else {
-        // Criar novo lead
         const { error } = await supabaseClient
           .from('leads')
           .insert([leadData]);
@@ -789,7 +737,6 @@ function initChatBot() {
     }
   }
 
-  // Event listeners
   input.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       sendMessage();
