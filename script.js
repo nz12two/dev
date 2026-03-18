@@ -2,11 +2,17 @@ const SUPABASE_URL = 'https://rqvmuxepmtsyczoftgjo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxdm11eGVwbXRzeWN6b2Z0Z2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3OTM2NjAsImV4cCI6MjA4OTM2OTY2MH0.TsAKLFNcc9-YlxHT4U7ReYBI3vJTfUsXp7_WAllsfLE';
 
 let supabaseClient;
-if (typeof supabase !== 'undefined') {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log('✅ Supabase inicializado com sucesso!');
-} else {
-  console.error('❌ Supabase library not loaded!');
+try {
+  if (typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase inicializado com sucesso!');
+  } else {
+    console.warn('⚠️ Supabase library not loaded - leads não serão salvos');
+    supabaseClient = null;
+  }
+} catch (e) {
+  console.error('❌ Erro ao inicializar Supabase:', e);
+  supabaseClient = null;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -22,42 +28,54 @@ document.addEventListener("DOMContentLoaded", () => {
   initGlowScroll();
   initSmartNavbar();
   initChatBot();
+  preventImageDrag();
 });
 
+// ============================================
+// SMART NAVBAR
+// ============================================
 function initSmartNavbar() {
   const nav = document.querySelector("nav");
   if (!nav) return;
 
   let lastScroll = 0;
+  let ticking = false;
 
   window.addEventListener("scroll", () => {
-    const currentScroll = window.pageYOffset;
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const currentScroll = window.pageYOffset;
 
-    if (currentScroll <= 0) {
-      nav.classList.remove("hide");
-      return;
+        if (currentScroll <= 0) {
+          nav.classList.remove("hide");
+        } else if (currentScroll > lastScroll && currentScroll > 120) {
+          nav.classList.add("hide");
+        } else {
+          nav.classList.remove("hide");
+        }
+
+        lastScroll = currentScroll;
+        ticking = false;
+      });
+      ticking = true;
     }
-
-    if (currentScroll > lastScroll && currentScroll > 120) {
-      nav.classList.add("hide");
-    } else {
-      nav.classList.remove("hide");
-    }
-
-    lastScroll = currentScroll;
   });
 }
 
-// Typing effect
+// ============================================
+// TYPING EFFECT
+// ============================================
 function initTyping() {
   const el = document.querySelector(".typing");
   if (!el) return;
+  
   const words = ["Discord Bot Builder", "Minecraft Systems", "Automation & Tools", "Web Interfaces", "Backend Developer"];
   let i = 0, j = 0, deleting = false;
+  let timeout;
 
   function type() {
-    let word = words[i];
-
+    const word = words[i];
+    
     if (deleting) {
       j--;
       el.textContent = word.substring(0, j);
@@ -77,13 +95,18 @@ function initTyping() {
       speed = 500;
     }
 
-    setTimeout(type, speed);
+    timeout = setTimeout(type, speed);
   }
 
   type();
+
+  // Cleanup potencial
+  return () => clearTimeout(timeout);
 }
 
-// Particles.js
+// ============================================
+// PARTICLES.JS
+// ============================================
 function initParticles() {
   if (typeof particlesJS === 'undefined') return;
 
@@ -111,118 +134,198 @@ function initParticles() {
     retina_detect: true
   });
 
+  let ticking = false;
   window.addEventListener('scroll', () => {
-    const particles = document.getElementById('particles-js');
-    if (particles) {
-      particles.style.transform = `translateY(${window.scrollY * 0.03}px)`;
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const particles = document.getElementById('particles-js');
+        if (particles) {
+          particles.style.transform = `translateY(${window.scrollY * 0.03}px)`;
+        }
+        ticking = false;
+      });
+      ticking = true;
     }
   });
 }
 
-// GitHub Projects
+// ============================================
+// GITHUB PROJECTS COM CACHE
+// ============================================
 async function initProjects() {
   const container = document.getElementById("github-projects");
   if (!container) return;
 
   const username = "nz12two";
+  const CACHE_KEY = 'github_projects';
+  const CACHE_TIME_KEY = 'github_projects_time';
+  const CACHE_DURATION = 3600000; // 1 hora
 
+  // Verificar cache
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+    
+    if (cached && cachedTime && (Date.now() - parseInt(cachedTime) < CACHE_DURATION)) {
+      renderProjects(JSON.parse(cached), container);
+      return;
+    }
+  } catch (e) {
+    console.warn('Erro ao ler cache:', e);
+  }
+
+  // Buscar novos projetos
   try {
     const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=6`);
-    if (!res.ok) throw new Error(res.status);
-
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
     const repos = await res.json();
-    container.innerHTML = "";
-
-    repos.forEach(r => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const imgUrl = `https://opengraph.githubassets.com/1/${username}/${r.name}`;
-
-      card.innerHTML = `
-        <img src="${imgUrl}" alt="${r.name}" 
-        onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(r.name)}'">
-        <h3>${r.name}</h3>
-        <p>${r.description || "Projeto disponível no GitHub"}</p>
-        <a href="${r.html_url}" target="_blank">
-        <i class="fab fa-github"></i> Ver Projeto</a>
-      `;
-
-      card.addEventListener('click', e => {
-        if (!e.target.closest('a'))
-          window.open(r.html_url, '_blank');
-      });
-
-      container.appendChild(card);
-    });
-
+    
+    // Salvar no cache
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(repos));
+      localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+    } catch (e) {
+      console.warn('Erro ao salvar cache:', e);
+    }
+    
+    renderProjects(repos, container);
+    
   } catch (e) {
-    console.error(e);
-    container.innerHTML = "<p>Erro ao carregar projetos.</p>";
+    console.error('Erro ao carregar projetos:', e);
+    container.innerHTML = "<p style='color: #ff4444; text-align: center;'>❌ Erro ao carregar projetos do GitHub</p>";
   }
 }
 
-// Sections Observer
+function renderProjects(repos, container) {
+  container.innerHTML = "";
+  
+  repos.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "card";
+    
+    const imgUrl = `https://opengraph.githubassets.com/1/${r.owner.login}/${r.name}`;
+    const projectName = r.name;
+    const description = r.description || "Projeto disponível no GitHub";
+    const htmlUrl = r.html_url;
+    
+    card.innerHTML = `
+      <img src="${imgUrl}" alt="${projectName}" 
+        onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(projectName)}'">
+      <h3>${projectName}</h3>
+      <p>${description}</p>
+      <a href="${htmlUrl}" target="_blank" rel="noopener">
+        <i class="fab fa-github"></i> Ver Projeto
+      </a>
+    `;
+    
+    card.addEventListener('click', (e) => {
+      if (!e.target.closest('a')) {
+        window.open(htmlUrl, '_blank', 'noopener');
+      }
+    });
+    
+    container.appendChild(card);
+  });
+}
+
+// ============================================
+// SECTIONS OBSERVER
+// ============================================
 function initSectionsObserver() {
   const sections = document.querySelectorAll("section");
+  
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (e.isIntersecting)
+      if (e.isIntersecting) {
         e.target.classList.add("show");
+      }
     });
-  }, { threshold: 0.2 });
+  }, { 
+    threshold: 0.2,
+    rootMargin: '0px'
+  });
 
   sections.forEach(s => observer.observe(s));
 }
 
-// Smooth Scroll
+// ============================================
+// SMOOTH SCROLL
+// ============================================
 function initSmoothScroll() {
   document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
+    a.addEventListener('click', (e) => {
       e.preventDefault();
-      const t = document.querySelector(a.getAttribute('href'));
-      if (t)
-        t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const href = a.getAttribute('href');
+      if (href === '#') return;
+      
+      const target = document.querySelector(href);
+      if (target) {
+        target.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
     });
   });
 }
 
-// Terminal
+// ============================================
+// TERMINAL
+// ============================================
 function initTerminal() {
   const input = document.getElementById("terminal-command");
   const output = document.getElementById("terminal-output");
 
   if (!input || !output) return;
 
-  const cmds = {
-    help: `help → comandos disponíveis
-about → sobre mim
-skills → tecnologias
-projects → projetos
-github → GitHub
-contato → contato
-whoami → quem sou eu
-clear → limpa terminal`,
+  const commands = {
+    help: `📋 COMANDOS DISPONÍVEIS:
+  help     → mostra esta mensagem
+  about    → sobre mim
+  skills   → minhas tecnologias
+  projects → meus projetos
+  github   → link do GitHub
+  contact  → informações de contato
+  whoami   → quem sou eu
+  clear    → limpa o terminal
+  date     → mostra data e hora`,
 
-    about: "Desenvolvedor focado em automação, bots e Minecraft. Sempre aprendendo novas tecnologias.",
-    skills: "Python, JS/Node.js, HTML, CSS, Banco de Dados, Discord Bots, Minecraft Systems, Git & Linux",
-    projects: "Discord Bots, Sistemas Minecraft, APIs REST, Dashboards interativos",
-    github: "https://github.com/nz12two",
-    contato: "Email: nzjr123@gmail.com | GitHub: @nz12two",
-    whoami: "> NZ - Desenvolvedor Full Stack"
+    about: "👨‍💻 Desenvolvedor focado em automação, bots e Minecraft. Sempre aprendendo novas tecnologias e buscando soluções inovadoras.",
+    
+    skills: "🛠️ TECNOLOGIAS:\n  • Python\n  • JavaScript/Node.js\n  • HTML5/CSS3\n  • Banco de Dados (SQL/NoSQL)\n  • Discord Bots\n  • Minecraft Systems\n  • Git & Linux\n  • DevOps Básico",
+    
+    projects: "🚀 PROJETOS:\n  • Discord Bots\n  • Sistemas Minecraft\n  • APIs REST\n  • Dashboards interativos\n  • Automações diversas",
+    
+    github: "🔗 https://github.com/nz12two",
+    
+    contact: "📫 CONTATO:\n  • Email: nzjr123@gmail.com\n  • GitHub: @nz12two\n  • Discord: link na seção Contato\n  • WhatsApp: (71) 92227-288",
+    
+    whoami: "> NZ - Desenvolvedor Full Stack | Especialista em Automação",
+    
+    date: () => {
+      const now = new Date();
+      return `📅 ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
+    }
   };
 
-  input.addEventListener('keydown', e => {
+  input.addEventListener('keydown', (e) => {
     if (e.key !== "Enter") return;
-    const cmd = input.value.toLowerCase().trim();
+    
+    const cmd = input.value.trim().toLowerCase();
     if (!cmd) return;
 
-    output.innerHTML += `<div style="color:#4da6ff;">$ ${input.value}</div>`;
+    // Mostrar comando digitado
+    output.innerHTML += `<div style="color:#4da6ff; margin-top: 8px;">$ ${input.value}</div>`;
 
+    // Processar comando
     if (cmd === "clear") {
       output.innerHTML = "";
+    } else if (commands[cmd]) {
+      const response = typeof commands[cmd] === 'function' ? commands[cmd]() : commands[cmd];
+      output.innerHTML += `<div style="color:#fff; margin: 4px 0 8px 12px; white-space: pre-line;">${response}</div>`;
     } else {
-      output.innerHTML += `<div>${cmds[cmd] || "Comando não encontrado."}</div>`;
+      output.innerHTML += `<div style="color:#ff4444; margin: 4px 0 8px 12px;">❌ Comando não encontrado. Digite 'help' para ver os comandos disponíveis.</div>`;
     }
 
     input.value = "";
@@ -230,9 +333,13 @@ clear → limpa terminal`,
   });
 }
 
-// Parallax
+// ============================================
+// MOUSE PARALLAX
+// ============================================
 function initMouseParallax() {
-  let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+  let mouseX = 0, mouseY = 0;
+  let targetX = 0, targetY = 0;
+  let rafId = null;
 
   document.addEventListener('mousemove', (e) => {
     targetX = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -245,75 +352,125 @@ function initMouseParallax() {
 
     const profileImg = document.querySelector('.profile-img');
     const heroTitle = document.querySelector('.hero h1');
-    const particles = document.getElementById('particles-js');
 
-    if (profileImg)
+    if (profileImg) {
       profileImg.style.transform = `translate(${mouseX * 15}px, ${mouseY * 15}px)`;
-    if (heroTitle)
+    }
+    
+    if (heroTitle) {
       heroTitle.style.transform = `translate(${mouseX * 8}px, ${mouseY * 8}px)`;
-    if (particles)
-      particles.style.transform = `translate(${mouseX * 20}px, ${mouseY * 20}px)`;
+    }
 
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
   }
 
   animate();
+
+  // Cleanup
+  return () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+  };
 }
 
-// Card Glow
+// ============================================
+// CARD GLOW 3D EFFECT
+// ============================================
 function initCardGlow() {
   const cards = document.querySelectorAll('.card, .stack div');
+  let rafId = null;
 
   cards.forEach(card => {
+    let mouseX = 0, mouseY = 0;
+    let targetX = 0, targetY = 0;
+
     card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      const angleX = (y - centerY) / 25;
-      const angleY = (centerX - x) / 25;
-
-      card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) scale3d(1.02,1.02,1.02)`;
+      
+      targetX = (y - centerY) / 20;
+      targetY = (centerX - x) / 20;
     });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+      targetX = 0;
+      targetY = 0;
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
     });
+
+    function animate() {
+      mouseX += (targetX - mouseX) * 0.1;
+      mouseY += (targetY - mouseY) * 0.1;
+      
+      card.style.transform = `perspective(1000px) rotateX(${mouseX}deg) rotateY(${mouseY}deg) scale3d(1.02,1.02,1.02)`;
+      
+      rafId = requestAnimationFrame(animate);
+    }
+
+    animate();
   });
+
+  return () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+  };
 }
 
-// Cursor
+// ============================================
+// CURSOR EFFECT
+// ============================================
 function enhanceTyping() {
   const cursor = document.querySelector('.cursor');
   if (!cursor) return;
 
+  let visible = true;
   setInterval(() => {
-    cursor.style.opacity = cursor.style.opacity === '1' ? '0.3' : '1';
+    visible = !visible;
+    cursor.style.opacity = visible ? '1' : '0.3';
   }, 500);
 }
 
-// Scroll Glow
+// ============================================
+// GLOW SCROLL EFFECT
+// ============================================
 function initGlowScroll() {
   const glow = document.getElementById('glowScroll');
   if (!glow) return;
 
-  window.addEventListener('scroll', () => {
-    const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+  let ticking = false;
 
-    if (scrollPercent > 5) {
-      glow.classList.add('show');
-      glow.style.background = `linear-gradient(90deg, transparent, var(--glow-color) ${scrollPercent}%, var(--glow-color) ${scrollPercent + 10}%, transparent)`;
-    } else {
-      glow.classList.remove('show');
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+        
+        if (scrollPercent > 5) {
+          glow.classList.add('show');
+          glow.style.background = `linear-gradient(90deg, transparent, var(--glow-color) ${scrollPercent}%, var(--glow-color) ${scrollPercent + 10}%, transparent)`;
+        } else {
+          glow.classList.remove('show');
+        }
+        
+        ticking = false;
+      });
+      ticking = true;
     }
   });
 }
 
-// Evitar drag em imagens
-document.querySelectorAll('img').forEach(img => {
-  img.addEventListener('dragstart', (e) => e.preventDefault());
-});
+// ============================================
+// PREVENT IMAGE DRAG
+// ============================================
+function preventImageDrag() {
+  document.querySelectorAll('img').forEach(img => {
+    img.addEventListener('dragstart', (e) => e.preventDefault());
+  });
+}
 
 // ============================================
 // CHAT BOT 
@@ -328,10 +485,10 @@ function initChatBot() {
 
   if (!btn || !chat || !input || !messages) return;
 
-  // 🔥 GERENCIAR SESSION ID
+  // Gerenciar SESSION ID
   let sessionId = localStorage.getItem('chat_session_id');
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    sessionId = crypto.randomUUID ? crypto.randomUUID() : 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('chat_session_id', sessionId);
   }
   console.log('🆔 Sessão:', sessionId);
@@ -339,6 +496,7 @@ function initChatBot() {
   // Abrir chat
   btn.onclick = () => {
     chat.style.display = "flex";
+    input.focus();
   };
 
   // Fechar chat
@@ -350,19 +508,57 @@ function initChatBot() {
 
   // Função para adicionar mensagem
   function addMessage(text, fromAI = true) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    div.className = fromAI ? "chat-bot-msg" : "chat-user-msg";
-    messages.appendChild(div);
+    const wrapper = document.createElement("div");
+    wrapper.className = `message-wrapper ${fromAI ? 'bot' : 'user'}`;
+    
+    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    if (fromAI) {
+      wrapper.innerHTML = `
+        <div class="bot-avatar-small">NZ</div>
+        <div class="message-content">
+          <div class="bot-name-tag">NZ Assistant</div>
+          <div class="message-bubble">${escapeHtml(text)}</div>
+          <div class="message-time">${time}</div>
+        </div>
+      `;
+    } else {
+      wrapper.innerHTML = `
+        <div class="message-content">
+          <div class="message-bubble">${escapeHtml(text)}</div>
+          <div class="message-time">${time}</div>
+        </div>
+      `;
+    }
+    
+    messages.appendChild(wrapper);
     messages.scrollTop = messages.scrollHeight;
   }
 
+  // Função para escapar HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Typing indicator
   function showTypingIndicator() {
-    const indicator = document.createElement("div");
-    indicator.className = "typing-indicator";
-    indicator.id = "typing-indicator";
-    indicator.innerHTML = "<span></span><span></span><span></span>";
-    messages.appendChild(indicator);
+    const wrapper = document.createElement("div");
+    wrapper.className = "message-wrapper bot";
+    wrapper.id = "typing-indicator";
+    
+    wrapper.innerHTML = `
+      <div class="bot-avatar-small">NZ</div>
+      <div class="message-content">
+        <div class="bot-name-tag">NZ Assistant</div>
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    
+    messages.appendChild(wrapper);
     messages.scrollTop = messages.scrollHeight;
   }
 
@@ -373,22 +569,11 @@ function initChatBot() {
     }
   }
 
-  function showSaveNotification(message) {
+  // Notificação de salvamento
+  function showSaveNotification(message, isSuccess = true) {
     const notification = document.createElement('div');
     notification.className = 'save-notification';
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      bottom: 100px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      animation: slideIn 0.3s ease;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    `;
+    notification.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
     
     document.body.appendChild(notification);
     
@@ -397,14 +582,26 @@ function initChatBot() {
     }, 3000);
   }
 
-  // Histórico da conversa para contexto
+  // Validadores
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function isValidPhone(phone) {
+    return /^\(?[1-9]{2}\)? ?9?[0-9]{4}-?[0-9]{4}$/.test(phone.replace(/\D/g, ''));
+  }
+
+  // Histórico da conversa
   let conversationHistory = [];
 
-  // Mensagem inicial 
+  // Mensagem inicial
   setTimeout(async () => {
     showTypingIndicator();
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const res = await fetch("https://rqvmuxepmtsyczoftgjo.supabase.co/functions/v1/chat-ai", {
         method: "POST",
         headers: {
@@ -416,18 +613,21 @@ function initChatBot() {
           history: [],
           session_id: sessionId,
           user_agent: navigator.userAgent
-        })
+        }),
+        signal: controller.signal
       });
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-      const result = await res.json();
+      clearTimeout(timeoutId);
       removeTypingIndicator();
 
-      const botReply = result.reply || "Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊";
-      addMessage(botReply, true);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
 
-      // Salvar no histórico
+      const result = await res.json();
+      const botReply = result.reply || "Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊";
+      
+      addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
 
     } catch (err) {
@@ -437,17 +637,17 @@ function initChatBot() {
     }
   }, 500);
 
+  // Enviar mensagem
   async function sendMessage() {
     const value = input.value.trim();
     if (!value) return;
 
     input.value = "";
     addMessage(value, false);
-
     conversationHistory.push({ role: "user", content: value });
+    
     showTypingIndicator();
 
-    //  TIMEOUT de 20 segundos
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
@@ -468,95 +668,124 @@ function initChatBot() {
       });
 
       clearTimeout(timeoutId);
+      removeTypingIndicator();
+
+      if (res.status === 429) {
+        addMessage("⚠️ Muitas requisições. Aguarde um momento antes de enviar nova mensagem.", true);
+        return;
+      }
 
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        throw new Error(`HTTP ${res.status}`);
       }
 
       const result = await res.json();
-
-      removeTypingIndicator();
-
       const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
+      
       addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
 
+      // Salvar lead se necessário
       if (result.is_lead || result.should_save) {
-        try {
-          // Verificar se já existe
-          let leadExists = false;
-          
-          if (result.extracted_email) {
-            const { data } = await supabaseClient
-              .from('leads')
-              .select('id')
-              .eq('email', result.extracted_email)
-              .maybeSingle();
-            
-            leadExists = !!data;
-          }
-
-          if (leadExists) {
-            // Atualizar lead existente
-            const { error } = await supabaseClient
-              .from('leads')
-              .update({
-                last_interaction: new Date(),
-                interaction_count: supabaseClient.rpc('increment', { x: 1 }),
-                last_message: value
-              })
-              .eq('email', result.extracted_email);
-
-            if (!error) {
-              console.log("✅ Lead atualizado!");
-              showSaveNotification('✅ Informações atualizadas!');
-            }
-          } else {
-            // Criar novo lead
-            const { error } = await supabaseClient
-              .from('leads')
-              .insert([{
-                session_id: sessionId,
-                name: result.extracted_name || null,
-                email: result.extracted_email || null,
-                phone: result.extracted_phone || null,
-                service_interest: result.extracted_service || null,
-                estimated_price: result.estimated_price || null,
-                first_interaction: new Date(),
-                last_interaction: new Date(),
-                interaction_count: 1,
-                status: result.red_flag ? 'red_flag' : 'new',
-                source: 'chat',
-                notes: `Conversa: ${conversationHistory.length} mensagens`
-              }]);
-
-            if (!error) {
-              console.log("✅ Novo lead salvo!");
-              showSaveNotification('✅ Informações salvas! Entraremos em contato.');
-            }
-          }
-
-        } catch (err) {
-          console.error("Erro ao salvar lead:", err);
-        }
-      }
-
-      
-      if (result.red_flag) {
-        console.warn('🚩 Bandeira vermelha detectada:', result.reply);
+        await saveLead(result, value);
       }
 
     } catch (err) {
       clearTimeout(timeoutId);
+      removeTypingIndicator();
+      
       if (err.name === 'AbortError') {
         console.error("Timeout da requisição");
-        removeTypingIndicator();
         addMessage("⏰ A resposta está demorando. Por favor, tente novamente ou chame NZ no WhatsApp (71) 92227-288", true);
       } else {
         console.error("Erro no chat:", err);
-        removeTypingIndicator();
-        addMessage("Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
+        addMessage("❌ Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
       }
+    }
+  }
+
+  // Salvar lead no Supabase
+  async function saveLead(result, lastMessage) {
+    if (!supabaseClient) {
+      console.warn('Supabase não disponível - lead não salvo');
+      return;
+    }
+
+    try {
+      const leadData = {
+        session_id: sessionId,
+        name: result.extracted_name || null,
+        email: result.extracted_email || null,
+        phone: result.extracted_phone || null,
+        service_interest: result.service_interest || result.extracted_service || null,
+        estimated_price: result.estimated_price || null,
+        first_interaction: new Date(),
+        last_interaction: new Date(),
+        interaction_count: 1,
+        status: result.red_flag ? 'red_flag' : 'new',
+        source: 'chat',
+        notes: `Conversa: ${conversationHistory.length} mensagens`
+      };
+
+      // Validar email se existir
+      if (leadData.email && !isValidEmail(leadData.email)) {
+        console.warn('Email inválido, não salvando');
+        return;
+      }
+
+      // Validar telefone se existir
+      if (leadData.phone && !isValidPhone(leadData.phone)) {
+        console.warn('Telefone inválido, não salvando');
+        return;
+      }
+
+      // Verificar se lead já existe por email ou session_id
+      let existingLead = null;
+      
+      if (leadData.email) {
+        const { data } = await supabaseClient
+          .from('leads')
+          .select('id, interaction_count')
+          .eq('email', leadData.email)
+          .maybeSingle();
+        
+        existingLead = data;
+      }
+
+      if (existingLead) {
+        // Atualizar lead existente
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({
+            last_interaction: new Date(),
+            interaction_count: existingLead.interaction_count + 1,
+            last_message: lastMessage,
+            session_id: sessionId,
+            phone: leadData.phone || undefined,
+            service_interest: leadData.service_interest || undefined
+          })
+          .eq('id', existingLead.id);
+
+        if (error) throw error;
+        
+        console.log("✅ Lead atualizado!");
+        showSaveNotification('✅ Informações atualizadas!', true);
+        
+      } else {
+        // Criar novo lead
+        const { error } = await supabaseClient
+          .from('leads')
+          .insert([leadData]);
+
+        if (error) throw error;
+        
+        console.log("✅ Novo lead salvo!");
+        showSaveNotification('✅ Informações salvas! Entraremos em contato.', true);
+      }
+
+    } catch (err) {
+      console.error("Erro ao salvar lead:", err);
+      showSaveNotification('❌ Erro ao salvar informações', false);
     }
   }
 
