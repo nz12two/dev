@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://rqvmuxepmtsyczoftgjo.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_bxk18MgK8u8bZtnpuAohww_4QmCro2a';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxdm11eGVwbXRzeWN6b2Z0Z2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3OTM2NjAsImV4cCI6MjA4OTM2OTY2MH0.TsAKLFNcc9-YlxHT4U7ReYBI3vJTfUsXp7_WAllsfLE';
 
 let supabaseClient;
 if (typeof supabase !== 'undefined') {
