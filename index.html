@@ -4,21 +4,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NZ • Developer</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  
+  <!-- SEO Meta Tags -->
+  <title>NZ • Desenvolvedor Full Stack | Automação & Bots</title>
+  <meta name="description" content="Portfólio de NZ - Desenvolvedor especializado em automação, bots, sistemas Minecraft e interfaces web. Conheça meus projetos e tecnologias.">
+  <meta name="keywords" content="desenvolvedor, python, javascript, nodejs, bots, automação, minecraft, discord bots">
+  <meta name="author" content="NZ">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="alternate icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- Preconnect para melhor performance -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
 </head>
 
 <body>
+  <!-- Particles Background -->
   <div id="particles-js"></div>
+  
+  <!-- Glow Scroll Effect -->
   <div class="glow-scroll" id="glowScroll"></div>
 
-  <nav>
+  <!-- Navegação -->
+  <nav role="navigation" aria-label="Menu principal">
     <div class="nav-container">
-      <div class="logo">NZ</div>
+      <div class="logo" aria-label="NZ Logo">NZ</div>
       <div class="nav-links">
-        <a href="#stack">Stack</a>
+        <a href="#stack" aria-current="location">Stack</a>
         <a href="#projetos">Projetos</a>
         <a href="#github">GitHub</a>
         <a href="#terminal">Terminal</a>
@@ -27,123 +48,156 @@
     </div>
   </nav>
 
+  <!-- Hero Section -->
   <header class="hero">
     <div class="profile-container">
-      <img src="assents/icon.jpg" alt="NZ" class="profile-img">
+      <img src="assets/icon.jpg" alt="Foto de perfil de NZ - Desenvolvedor Full Stack" class="profile-img" loading="eager">
     </div>
     <h1 data-text="NZ"><span class="accent">NZ</span></h1>
     <h2 class="typing-container">
       <span class="typing"></span>
-      <span class="cursor">|</span>
+      <span class="cursor" aria-hidden="true">|</span>
     </h2>
     <p>Automação, bots, sistemas eficientes.</p>
     <div class="hero-buttons">
-      <a href="#projetos" class="btn">
-        <i class="fa-solid fa-code"></i> Projetos
+      <a href="#projetos" class="btn" aria-label="Ver projetos">
+        <i class="fa-solid fa-code" aria-hidden="true"></i> Projetos
       </a>
-      <a href="#contato" class="btn outline">
-        <i class="fa-solid fa-paper-plane"></i> Contato
+      <a href="#contato" class="btn outline" aria-label="Entrar em contato">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Contato
       </a>
     </div>
   </header>
 
-  <section id="stack">
-    <h2>Stack</h2>
+  <!-- Stack Section -->
+  <section id="stack" aria-labelledby="stack-title">
+    <h2 id="stack-title">Stack</h2>
     <div class="stack">
-      <div><i class="fa-brands fa-python"></i> Python</div>
-      <div><i class="fa-brands fa-js"></i> JavaScript</div>
-      <div><i class="fa-brands fa-node"></i> Node.js</div>
-      <div><i class="fa-solid fa-server"></i> DevOps</div>
-      <div><i class="fa-solid fa-robot"></i> Bots</div>
-      <div><i class="fa-solid fa-database"></i> Databases</div>
+      <div role="article" aria-label="Tecnologia Python">
+        <i class="fa-brands fa-python" aria-hidden="true"></i> Python
+      </div>
+      <div role="article" aria-label="Tecnologia JavaScript">
+        <i class="fa-brands fa-js" aria-hidden="true"></i> JavaScript
+      </div>
+      <div role="article" aria-label="Tecnologia Node.js">
+        <i class="fa-brands fa-node" aria-hidden="true"></i> Node.js
+      </div>
+      <div role="article" aria-label="DevOps">
+        <i class="fa-solid fa-server" aria-hidden="true"></i> DevOps
+      </div>
+      <div role="article" aria-label="Desenvolvimento de Bots">
+        <i class="fa-solid fa-robot" aria-hidden="true"></i> Bots
+      </div>
+      <div role="article" aria-label="Banco de Dados">
+        <i class="fa-solid fa-database" aria-hidden="true"></i> Databases
+      </div>
     </div>
   </section>
 
-  <section id="projetos">
-    <h2>Projetos</h2>
-    <div id="github-projects" class="projetos"></div>
+  <!-- Projetos Section -->
+  <section id="projetos" aria-labelledby="projetos-title">
+    <h2 id="projetos-title">Projetos</h2>
+    <div id="github-projects" class="projetos" role="feed" aria-label="Lista de projetos do GitHub"></div>
   </section>
 
-  <section id="github">
-    <h2>GitHub</h2>
+  <!-- GitHub Section -->
+  <section id="github" aria-labelledby="github-title">
+    <h2 id="github-title">GitHub</h2>
     <div class="github-stats">
       <img
         src="https://github-readme-stats.vercel.app/api?username=nz12two&show_icons=true&theme=dark&bg_color=0a0a0a&border_color=4da6ff"
-        alt="GitHub Stats">
+        alt="Estatísticas do GitHub de NZ - commits, pull requests e mais"
+        loading="lazy">
       <img
         src="https://github-readme-stats.vercel.app/api/top-langs/?username=nz12two&layout=compact&theme=dark&bg_color=0a0a0a&border_color=4da6ff"
-        alt="Top Languages">
+        alt="Linguagens mais utilizadas por NZ nos projetos do GitHub"
+        loading="lazy">
     </div>
   </section>
 
-  <section id="terminal">
-    <h2>Terminal</h2>
-    <div class="terminal">
-      <div id="terminal-output"></div>
+  <!-- Terminal Section -->
+  <section id="terminal" aria-labelledby="terminal-title">
+    <h2 id="terminal-title">Terminal</h2>
+    <div class="terminal" role="region" aria-label="Terminal interativo">
+      <div id="terminal-output" role="log" aria-live="polite"></div>
       <div class="terminal-input-line">
-        <span class="prompt">$</span>
-        <input type="text" id="terminal-command" placeholder="Digite 'help' para comandos" autocomplete="off">
+        <span class="prompt" aria-hidden="true">$</span>
+        <input 
+          type="text" 
+          id="terminal-command" 
+          placeholder="Digite 'help' para comandos" 
+          autocomplete="off"
+          aria-label="Comando do terminal">
       </div>
     </div>
   </section>
 
-  <section id="contato">
-    <h2>Contato</h2>
+  <!-- Contato Section -->
+  <section id="contato" aria-labelledby="contato-title">
+    <h2 id="contato-title">Contato</h2>
     <div class="links">
-      <a href="https://github.com/nz12two" target="_blank" rel="noopener">
-        <i class="fab fa-github"></i> GitHub
+      <a href="https://github.com/nz12two" target="_blank" rel="noopener noreferrer" aria-label="GitHub de NZ">
+        <i class="fab fa-github" aria-hidden="true"></i> GitHub
       </a>
-      <a href="https://discord.gg/x3sUtFxTdd" target="_blank" rel="noopener">
-        <i class="fab fa-discord"></i> Discord
+      <a href="https://discord.gg/x3sUtFxTdd" target="_blank" rel="noopener noreferrer" aria-label="Servidor do Discord">
+        <i class="fab fa-discord" aria-hidden="true"></i> Discord
       </a>
-      <a href="https://wa.me/557192227288" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> WhatsApp
+      <a href="https://wa.me/557192227288" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+        <i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp
       </a>
-      <a href="mailto:nzjr123@gmail.com">
-        <i class="fa-solid fa-envelope"></i> Email
+      <a href="mailto:nzjr123@gmail.com" aria-label="Enviar email">
+        <i class="fa-solid fa-envelope" aria-hidden="true"></i> Email
       </a>
     </div>
   </section>
-  <button id="open-chat">
-    <i class="fa-solid fa-comment"></i>
+
+  <!-- Chat Bot Button -->
+  <button id="open-chat" aria-label="Abrir chat de atendimento" title="Chat de atendimento">
+    <i class="fa-solid fa-comment" aria-hidden="true"></i>
   </button>
 
-  <div id="chat-bot">
+  <!-- Chat Bot Container -->
+  <div id="chat-bot" role="dialog" aria-label="Chat de atendimento" aria-hidden="true">
     <div id="chat-header">
-      <div class="bot-avatar-large">
-        NZ
-      </div>
+      <div class="bot-avatar-large" aria-hidden="true">NZ</div>
       <div class="bot-info">
         <div class="bot-name">
           NZ Assistant
-          <i class="fas fa-check-circle" style="color: #4da6ff; font-size: 14px;"></i>
+          <i class="fas fa-check-circle" style="color: #4da6ff; font-size: 14px;" aria-hidden="true"></i>
         </div>
         <div class="bot-status">
-          <i class="fas fa-circle"></i> Online
+          <i class="fas fa-circle" style="color: #4ade80;" aria-hidden="true"></i> Online
           <span>• responde rápido</span>
         </div>
       </div>
-      <button id="close-chat">
-        <i class="fas fa-times"></i>
+      <button id="close-chat" aria-label="Fechar chat">
+        <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
 
-    <div id="chat-messages"></div>
+    <div id="chat-messages" role="log" aria-live="polite"></div>
+    
     <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
-      <button id="chat-send">
-        <i class="fa-solid fa-paper-plane"></i>
+      <input 
+        type="text" 
+        id="chat-input" 
+        placeholder="Digite sua mensagem..." 
+        aria-label="Mensagem do chat">
+      <button id="chat-send" aria-label="Enviar mensagem">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
       </button>
     </div>
   </div>
 
-  <footer>
+  <!-- Footer -->
+  <footer role="contentinfo">
     <p>© 2026 NZ • Todos os direitos reservados</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="script.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js" defer></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
+  <script src="script.js" defer></script>
 </body>
 
 </html>
