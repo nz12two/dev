@@ -316,7 +316,7 @@ document.querySelectorAll('img').forEach(img => {
 });
 
 // ============================================
-// CHAT BOT FULL IA 
+// CHAT BOT 
 // ============================================
 function initChatBot() {
   const btn = document.getElementById("open-chat");
@@ -327,6 +327,14 @@ function initChatBot() {
   const sendBtn = document.getElementById("chat-send");
 
   if (!btn || !chat || !input || !messages) return;
+
+  // 🔥 GERENCIAR SESSION ID
+  let sessionId = localStorage.getItem('chat_session_id');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem('chat_session_id', sessionId);
+  }
+  console.log('🆔 Sessão:', sessionId);
 
   // Abrir chat
   btn.onclick = () => {
@@ -349,7 +357,6 @@ function initChatBot() {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  // Função para mostrar "digitando..."
   function showTypingIndicator() {
     const indicator = document.createElement("div");
     indicator.className = "typing-indicator";
@@ -359,12 +366,35 @@ function initChatBot() {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  // Função para remover "digitando..."
   function removeTypingIndicator() {
     const indicator = document.getElementById("typing-indicator");
     if (indicator) {
       indicator.remove();
     }
+  }
+
+  function showSaveNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'save-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      animation: slideIn 0.3s ease;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
   }
 
   // Histórico da conversa para contexto
@@ -383,7 +413,9 @@ function initChatBot() {
         },
         body: JSON.stringify({
           message: "INICIAR_CONVERSA",
-          history: []
+          history: [],
+          session_id: sessionId,
+          user_agent: navigator.userAgent
         })
       });
 
@@ -415,6 +447,10 @@ function initChatBot() {
     conversationHistory.push({ role: "user", content: value });
     showTypingIndicator();
 
+    //  TIMEOUT de 20 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch("https://rqvmuxepmtsyczoftgjo.supabase.co/functions/v1/chat-ai", {
         method: "POST",
@@ -424,9 +460,14 @@ function initChatBot() {
         },
         body: JSON.stringify({
           message: value,
-          history: conversationHistory 
-        })
+          history: conversationHistory,
+          session_id: sessionId,
+          user_agent: navigator.userAgent
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -439,36 +480,83 @@ function initChatBot() {
       const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
       addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
+
       if (result.is_lead || result.should_save) {
         try {
-          const { error } = await supabaseClient
-            .from('orcamentos')
-            .insert([
-              {
-                nome: result.extracted_name || "Não informado",
-                email: result.extracted_email || "Não informado",
-                tipo: result.extracted_service || "Não especificado",
-                descricao: value,
-                conversa: JSON.stringify(conversationHistory),
-                status: 'novo',
-                created_at: new Date()
-              }
-            ]);
-
-          if (error) {
-            console.error("Erro ao salvar no Supabase:", error);
-          } else {
-            console.log("✅ Lead salvo com sucesso!");
+          // Verificar se já existe
+          let leadExists = false;
+          
+          if (result.extracted_email) {
+            const { data } = await supabaseClient
+              .from('leads')
+              .select('id')
+              .eq('email', result.extracted_email)
+              .maybeSingle();
+            
+            leadExists = !!data;
           }
+
+          if (leadExists) {
+            // Atualizar lead existente
+            const { error } = await supabaseClient
+              .from('leads')
+              .update({
+                last_interaction: new Date(),
+                interaction_count: supabaseClient.rpc('increment', { x: 1 }),
+                last_message: value
+              })
+              .eq('email', result.extracted_email);
+
+            if (!error) {
+              console.log("✅ Lead atualizado!");
+              showSaveNotification('✅ Informações atualizadas!');
+            }
+          } else {
+            // Criar novo lead
+            const { error } = await supabaseClient
+              .from('leads')
+              .insert([{
+                session_id: sessionId,
+                name: result.extracted_name || null,
+                email: result.extracted_email || null,
+                phone: result.extracted_phone || null,
+                service_interest: result.extracted_service || null,
+                estimated_price: result.estimated_price || null,
+                first_interaction: new Date(),
+                last_interaction: new Date(),
+                interaction_count: 1,
+                status: result.red_flag ? 'red_flag' : 'new',
+                source: 'chat',
+                notes: `Conversa: ${conversationHistory.length} mensagens`
+              }]);
+
+            if (!error) {
+              console.log("✅ Novo lead salvo!");
+              showSaveNotification('✅ Informações salvas! Entraremos em contato.');
+            }
+          }
+
         } catch (err) {
-          console.error("Erro ao salvar orçamento:", err);
+          console.error("Erro ao salvar lead:", err);
         }
       }
 
+      
+      if (result.red_flag) {
+        console.warn('🚩 Bandeira vermelha detectada:', result.reply);
+      }
+
     } catch (err) {
-      console.error("Erro no chat:", err);
-      removeTypingIndicator();
-      addMessage("Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error("Timeout da requisição");
+        removeTypingIndicator();
+        addMessage("⏰ A resposta está demorando. Por favor, tente novamente ou chame NZ no WhatsApp (71) 92227-288", true);
+      } else {
+        console.error("Erro no chat:", err);
+        removeTypingIndicator();
+        addMessage("Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
+      }
     }
   }
 
