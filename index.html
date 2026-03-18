@@ -104,19 +104,32 @@
       </a>
     </div>
   </section>
-
-  <!-- CHAT BOT ATUALIZADO -->
   <button id="open-chat">
     <i class="fa-solid fa-comment"></i>
   </button>
 
   <div id="chat-bot">
     <div id="chat-header">
-      <span>🤖 NZ Assistant</span>
-      <button id="close-chat">×</button>
+      <div class="bot-avatar-large">
+        NZ
+      </div>
+      <div class="bot-info">
+        <div class="bot-name">
+          NZ Assistant
+          <i class="fas fa-check-circle" style="color: #4da6ff; font-size: 14px;"></i>
+        </div>
+        <div class="bot-status">
+          <i class="fas fa-circle"></i> Online
+          <span>• responde rápido</span>
+        </div>
+      </div>
+      <button id="close-chat">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
+
     <div id="chat-messages"></div>
-    <div id="chat-input-container">
+    <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
       <button id="chat-send">
         <i class="fa-solid fa-paper-plane"></i>
