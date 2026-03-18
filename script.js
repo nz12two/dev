@@ -405,7 +405,6 @@ function initChatBot() {
     }
   }, 500);
 
-  // Função para enviar mensagem
   async function sendMessage() {
     const value = input.value.trim();
     if (!value) return;
@@ -413,10 +412,7 @@ function initChatBot() {
     input.value = "";
     addMessage(value, false);
 
-    // Adicionar ao histórico
     conversationHistory.push({ role: "user", content: value });
-
-    // Mostrar indicador de digitação
     showTypingIndicator();
 
     try {
@@ -424,10 +420,11 @@ function initChatBot() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
           message: value,
-          history: conversationHistory // Envia histórico completo para contexto
+          history: conversationHistory 
         })
       });
 
@@ -437,19 +434,13 @@ function initChatBot() {
 
       const result = await res.json();
 
-      // Remove indicador de digitação
       removeTypingIndicator();
 
       const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
       addMessage(botReply, true);
-
-      // Adicionar resposta da IA ao histórico
       conversationHistory.push({ role: "assistant", content: botReply });
-
-      // Salvar no Supabase se for um orçamento (identificado pela IA)
       if (result.is_lead || result.should_save) {
         try {
-          // Extrair informações da conversa (a IA pode estruturar isso)
           const { error } = await supabaseClient
             .from('orcamentos')
             .insert([
