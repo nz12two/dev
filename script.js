@@ -17,7 +17,7 @@ try {
 
 document.addEventListener("DOMContentLoaded", () => {
   initTyping();
-  initSimpleBackground(); // ← Mudado de initParticles para background simples
+  initSimpleBackground();
   initProjects();
   initSectionsObserver();
   initTerminal();
@@ -426,7 +426,7 @@ function preventImageDrag() {
 }
 
 // ============================================
-// CHAT BOT - COMPLETO E CORRIGIDO
+// CHAT BOT 
 // ============================================
 function initChatBot() {
   const btn = document.getElementById("open-chat");
@@ -438,31 +438,54 @@ function initChatBot() {
 
   if (!btn || !chat || !input || !messages) return;
 
-  // LIMPAR MENSAGENS AO INICIAR
   messages.innerHTML = '';
 
-  // Gerenciar SESSION ID
   let sessionId = localStorage.getItem('chat_session_id');
   if (!sessionId) {
-    sessionId = crypto.randomUUID ? crypto.randomUUID() : 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    sessionId = crypto.randomUUID();
     localStorage.setItem('chat_session_id', sessionId);
   }
-  console.log('🆔 Sessão:', sessionId);
 
-  // Abrir chat
+  // ========================
+  // ABRIR / FECHAR (FIX)
+  // ========================
   btn.onclick = () => {
     chat.style.display = "flex";
-    input.focus();
+    chat.removeAttribute("inert");
+    setTimeout(() => input.focus(), 50);
   };
 
-  // Fechar chat
   if (closeBtn) {
     closeBtn.onclick = () => {
+      document.activeElement.blur();
+      chat.setAttribute("inert", "");
       chat.style.display = "none";
     };
   }
 
-  // Função para escapar HTML
+  // ========================
+  // HISTÓRICO MELHOR
+  // ========================
+  let conversationHistory = [];
+
+  function addToHistory(role, content) {
+    conversationHistory.push({ role, content });
+    if (conversationHistory.length > 12) {
+      conversationHistory.shift();
+    }
+  }
+
+  // ========================
+  // DETECTAR CLIENTE QUENTE
+  // ========================
+  function isHotLead(text) {
+    const triggers = ["preço", "valor", "quanto", "quero", "contratar", "faz pra mim"];
+    return triggers.some(t => text.toLowerCase().includes(t));
+  }
+
+  // ========================
+  // UI
+  // ========================
   function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -470,26 +493,16 @@ function initChatBot() {
     return div.innerHTML;
   }
 
-  // ===== FUNÇÃO ADD MESSAGE CORRIGIDA =====
   function addMessage(text, fromAI = true) {
     const wrapper = document.createElement("div");
     wrapper.className = `message-wrapper ${fromAI ? 'bot' : 'user'}`;
 
-    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const time = new Date().toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
-    // LIMPAR O TEXTO - remover quebras de linha e espaços extras
-    let cleanText = String(text || '')
-      .replace(/\r\n/g, ' ')   // Windows line endings
-      .replace(/\n/g, ' ')     // Unix line endings
-      .replace(/\r/g, ' ')     // Mac line endings
-      .replace(/\s+/g, ' ')    // substitui múltiplos espaços por um único espaço
-      .trim();                 // remove espaços do início e fim
-
-    // Se ficou vazio, colocar um espaço mínimo
-    if (!cleanText && !fromAI) {
-      cleanText = '•';
-    }
-
+    const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
     const escapedText = escapeHtml(cleanText);
 
     if (fromAI) {
@@ -514,7 +527,6 @@ function initChatBot() {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  // Typing indicator
   function showTypingIndicator() {
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper bot";
@@ -522,107 +534,45 @@ function initChatBot() {
 
     wrapper.innerHTML = `
       <div class="bot-avatar-small">NZ</div>
-      <div class="message-content">
-        <div class="bot-name-tag">NZ Assistant</div>
-        <div class="typing-indicator">
-          <span></span><span></span><span></span>
-        </div>
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
       </div>
     `;
 
     messages.appendChild(wrapper);
-    messages.scrollTop = messages.scrollHeight;
   }
 
   function removeTypingIndicator() {
-    const indicator = document.getElementById("typing-indicator");
-    if (indicator) {
-      indicator.remove();
-    }
+    document.getElementById("typing-indicator")?.remove();
   }
 
-  // Notificação de salvamento
-  function showSaveNotification(message, isSuccess = true) {
-    const notification = document.createElement('div');
-    notification.className = 'save-notification';
-    notification.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-  }
-
-  // Validadores
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  function isValidPhone(phone) {
-    return /^\(?[1-9]{2}\)? ?9?[0-9]{4}-?[0-9]{4}$/.test(phone.replace(/\D/g, ''));
-  }
-
-  // Histórico da conversa
-  let conversationHistory = [];
-
-  // FLAG PARA CONTROLAR SE JÁ ENVIOU MENSAGEM INICIAL
-  let initialMessageSent = false;
-
-  // Mensagem inicial
-  setTimeout(async () => {
-    // SÓ ENVIA SE AINDA NÃO ENVIOU
-    if (initialMessageSent) return;
-    initialMessageSent = true;
-
-    showTypingIndicator();
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      const res = await fetch("https://rqvmuxepmtsyczoftgjo.supabase.co/functions/v1/chat-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          message: "INICIAR_CONVERSA",
-          history: [],
-          session_id: sessionId,
-          user_agent: navigator.userAgent
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      removeTypingIndicator();
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const result = await res.json();
-      const botReply = result.reply || "Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊";
-
-      addMessage(botReply, true);
-      conversationHistory.push({ role: "assistant", content: botReply });
-
-    } catch (err) {
-      console.error("Erro ao iniciar chat:", err);
-      removeTypingIndicator();
-      addMessage("Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊", true);
-    }
+  // ========================
+  // MENSAGEM INICIAL MELHOR
+  // ========================
+  setTimeout(() => {
+    const msg = "Você quer algo pra servidor Minecraft, bot Discord ou site?";
+    addMessage(msg, true);
+    addToHistory("assistant", msg);
   }, 500);
 
-  // Enviar mensagem
+  // ========================
+  // ENVIAR
+  // ========================
   async function sendMessage() {
     const value = input.value.trim();
     if (!value) return;
 
     input.value = "";
+
     addMessage(value, false);
-    conversationHistory.push({ role: "user", content: value });
+    addToHistory("user", value);
+
+    // 🔥 resposta imediata se detectar intenção de compra
+    if (isHotLead(value)) {
+      addMessage("Boa, isso já dá pra fazer. Quer um orçamento rápido ou prefere ir direto no WhatsApp?", true);
+    }
 
     showTypingIndicator();
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     try {
       const res = await fetch("https://rqvmuxepmtsyczoftgjo.supabase.co/functions/v1/chat-ai", {
@@ -636,127 +586,40 @@ function initChatBot() {
           history: conversationHistory,
           session_id: sessionId,
           user_agent: navigator.userAgent
-        }),
-        signal: controller.signal
+        })
       });
 
-      clearTimeout(timeoutId);
       removeTypingIndicator();
 
-      if (res.status === 429) {
-        addMessage("⚠️ Muitas requisições. Aguarde um momento antes de enviar nova mensagem.", true);
-        return;
-      }
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error();
 
       const result = await res.json();
-      const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
+      let botReply = result.reply || "Me explica melhor o que você quer fazer.";
+
+      // 🔥 ANTI GENÉRICO
+      if (
+        botReply.toLowerCase().includes("como posso ajudar") ||
+        botReply.length < 15
+      ) {
+        botReply = "Me diz melhor: Minecraft, bot ou site?";
+      }
 
       addMessage(botReply, true);
-      conversationHistory.push({ role: "assistant", content: botReply });
+      addToHistory("assistant", botReply);
 
+      // 🔥 FECHAMENTO
       if (result.is_lead || result.should_save) {
-        await saveLead(result, value);
+        addMessage("Se quiser agilizar, chama no WhatsApp: 71 92227-288 🚀", true);
       }
 
     } catch (err) {
-      clearTimeout(timeoutId);
       removeTypingIndicator();
-
-      if (err.name === 'AbortError') {
-        addMessage("⏰ A resposta está demorando. Por favor, tente novamente ou chame NZ no WhatsApp (71) 92227-288", true);
-      } else {
-        addMessage("❌ Houve um erro ao se conectar. Por favor, tente novamente ou contato direto: (71) 92227-288", true);
-      }
+      addMessage("Erro. Fala direto no WhatsApp: 71 92227-288", true);
     }
   }
 
-  // Salvar lead no Supabase
-  async function saveLead(result, lastMessage) {
-    if (!supabaseClient) {
-      console.warn('Supabase não disponível - lead não salvo');
-      return;
-    }
-
-    try {
-      const leadData = {
-        session_id: sessionId,
-        name: result.extracted_name || null,
-        email: result.extracted_email || null,
-        phone: result.extracted_phone || null,
-        service_interest: result.service_interest || result.extracted_service || null,
-        estimated_price: result.estimated_price || null,
-        first_interaction: new Date(),
-        last_interaction: new Date(),
-        interaction_count: 1,
-        status: result.red_flag ? 'red_flag' : 'new',
-        source: 'chat',
-        notes: `Conversa: ${conversationHistory.length} mensagens`
-      };
-
-      if (leadData.email && !isValidEmail(leadData.email)) {
-        console.warn('Email inválido, não salvando');
-        return;
-      }
-
-      if (leadData.phone && !isValidPhone(leadData.phone)) {
-        console.warn('Telefone inválido, não salvando');
-        return;
-      }
-
-      let existingLead = null;
-
-      if (leadData.email) {
-        const { data } = await supabaseClient
-          .from('leads')
-          .select('id, interaction_count')
-          .eq('email', leadData.email)
-          .maybeSingle();
-
-        existingLead = data;
-      }
-
-      if (existingLead) {
-        const { error } = await supabaseClient
-          .from('leads')
-          .update({
-            last_interaction: new Date(),
-            interaction_count: existingLead.interaction_count + 1,
-            last_message: lastMessage,
-            session_id: sessionId,
-            phone: leadData.phone || undefined,
-            service_interest: leadData.service_interest || undefined
-          })
-          .eq('id', existingLead.id);
-
-        if (error) throw error;
-
-        console.log("✅ Lead atualizado!");
-        showSaveNotification('✅ Informações atualizadas!', true);
-
-      } else {
-        const { error } = await supabaseClient
-          .from('leads')
-          .insert([leadData]);
-
-        if (error) throw error;
-
-        console.log("✅ Novo lead salvo!");
-        showSaveNotification('✅ Informações salvas! Entraremos em contato.', true);
-      }
-
-    } catch (err) {
-      console.error("Erro ao salvar lead:", err);
-      showSaveNotification('❌ Erro ao salvar informações', false);
-    }
-  }
-
-  // Event listeners
   input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
+    if (e.key === "Enter") sendMessage();
   });
 
   if (sendBtn) {
