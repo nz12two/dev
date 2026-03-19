@@ -17,7 +17,7 @@ try {
 
 document.addEventListener("DOMContentLoaded", () => {
   initTyping();
-  initParticles();
+  initSimpleBackground(); // ← Mudado de initParticles para background simples
   initProjects();
   initSectionsObserver();
   initTerminal();
@@ -30,6 +30,21 @@ document.addEventListener("DOMContentLoaded", () => {
   initChatBot();
   preventImageDrag();
 });
+
+// ============================================
+// BACKGROUND SIMPLES (SEM PARTICLES)
+// ============================================
+function initSimpleBackground() {
+  const particles = document.getElementById('particles-js');
+  if (particles) {
+    // Apenas garantir que é um fundo sólido
+    particles.style.background = '#0a0a0f';
+    particles.innerHTML = ''; // Remove qualquer conteúdo
+
+    // Adicionar um gradiente sutil (opcional)
+    particles.style.background = 'radial-gradient(circle at 50% 50%, #1a1a2e, #0a0a0f)';
+  }
+}
 
 // ============================================
 // SMART NAVBAR
@@ -68,14 +83,14 @@ function initSmartNavbar() {
 function initTyping() {
   const el = document.querySelector(".typing");
   if (!el) return;
-  
+
   const words = ["Discord Bot Builder", "Minecraft Systems", "Automation & Tools", "Web Interfaces", "Backend Developer"];
   let i = 0, j = 0, deleting = false;
   let timeout;
 
   function type() {
     const word = words[i];
-    
+
     if (deleting) {
       j--;
       el.textContent = word.substring(0, j);
@@ -102,44 +117,6 @@ function initTyping() {
 }
 
 // ============================================
-// PARTICLES.JS
-// ============================================
-function initParticles() {
-  if (typeof particlesJS === 'undefined') return;
-
-  particlesJS("particles-js", {
-    particles: {
-      number: { value: 100, density: { enable: true, value_area: 800 } },
-      color: { value: "#4da6ff" },
-      shape: { type: "circle" },
-      opacity: { value: 0.3, random: true, anim: { enable: true, speed: 1, opacity_min: 0.1 } },
-      size: { value: 3, random: true, anim: { enable: true, speed: 2, size_min: 0.1 } },
-      line_linked: { enable: true, distance: 150, color: "#4da6ff", opacity: 0.2, width: 1 },
-      move: { 
-        enable: true, 
-        speed: 1, 
-        random: true, 
-        straight: false, 
-        out_mode: "bounce",
-        attract: { enable: false }
-      }
-    },
-    interactivity: {
-      events: {
-        onhover: { enable: true, mode: "grab" },
-        onclick: { enable: true, mode: "push" }
-      },
-      modes: {
-        grab: { distance: 200, line_linked: { opacity: 0.5 } },
-        bubble: { distance: 200, size: 6, duration: 0.3, opacity: 0.5 },
-        push: { particles_nb: 3 }
-      }
-    },
-    retina_detect: true
-  });
-}
-
-// ============================================
 // GITHUB PROJECTS COM CACHE
 // ============================================
 async function initProjects() {
@@ -154,7 +131,7 @@ async function initProjects() {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-    
+
     if (cached && cachedTime && (Date.now() - parseInt(cachedTime) < CACHE_DURATION)) {
       renderProjects(JSON.parse(cached), container);
       return;
@@ -166,36 +143,36 @@ async function initProjects() {
   try {
     const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=6`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
+
     const repos = await res.json();
-    
+
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(repos));
       localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
     } catch (e) {
       console.warn('Erro ao salvar cache:', e);
     }
-    
+
     renderProjects(repos, container);
-    
+
   } catch (e) {
     console.error('Erro ao carregar projetos:', e);
-    container.innerHTML = "<p style='color: #ff4444; text-align: center;'>❌ Erro ao carregar projetos do GitHub</p>";
+    container.innerHTML = "<p style='color: #ef4444; text-align: center;'>❌ Erro ao carregar projetos do GitHub</p>";
   }
 }
 
 function renderProjects(repos, container) {
   container.innerHTML = "";
-  
+
   repos.forEach(r => {
     const card = document.createElement("div");
     card.className = "card";
-    
+
     const imgUrl = `https://opengraph.githubassets.com/1/${r.owner.login}/${r.name}`;
     const projectName = r.name;
     const description = r.description || "Projeto disponível no GitHub";
     const htmlUrl = r.html_url;
-    
+
     card.innerHTML = `
       <img src="${imgUrl}" alt="${projectName}" 
         onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(projectName)}'">
@@ -205,13 +182,13 @@ function renderProjects(repos, container) {
         <i class="fab fa-github"></i> Ver Projeto
       </a>
     `;
-    
+
     card.addEventListener('click', (e) => {
       if (!e.target.closest('a')) {
         window.open(htmlUrl, '_blank', 'noopener');
       }
     });
-    
+
     container.appendChild(card);
   });
 }
@@ -221,14 +198,14 @@ function renderProjects(repos, container) {
 // ============================================
 function initSectionsObserver() {
   const sections = document.querySelectorAll("section");
-  
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         e.target.classList.add("show");
       }
     });
-  }, { 
+  }, {
     threshold: 0.2,
     rootMargin: '0px'
   });
@@ -245,12 +222,12 @@ function initSmoothScroll() {
       e.preventDefault();
       const href = a.getAttribute('href');
       if (href === '#') return;
-      
+
       const target = document.querySelector(href);
       if (target) {
-        target.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
         });
       }
     });
@@ -279,17 +256,17 @@ function initTerminal() {
   date     → mostra data e hora`,
 
     about: "👨‍💻 Desenvolvedor focado em automação, bots e Minecraft. Sempre aprendendo novas tecnologias e buscando soluções inovadoras.",
-    
+
     skills: "🛠️ TECNOLOGIAS:\n  • Python\n  • JavaScript/Node.js\n  • HTML5/CSS3\n  • Banco de Dados (SQL/NoSQL)\n  • Discord Bots\n  • Minecraft Systems\n  • Git & Linux\n  • DevOps Básico",
-    
+
     projects: "🚀 PROJETOS:\n  • Discord Bots\n  • Sistemas Minecraft\n  • APIs REST\n  • Dashboards interativos\n  • Automações diversas",
-    
+
     github: "🔗 https://github.com/nz12two",
-    
+
     contact: "📫 CONTATO:\n  • Email: nzjr123@gmail.com\n  • GitHub: @nz12two\n  • Discord: link na seção Contato\n  • WhatsApp: (71) 92227-288",
-    
+
     whoami: "> NZ - Desenvolvedor Full Stack | Especialista em Automação",
-    
+
     date: () => {
       const now = new Date();
       return `📅 ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
@@ -298,19 +275,19 @@ function initTerminal() {
 
   input.addEventListener('keydown', (e) => {
     if (e.key !== "Enter") return;
-    
+
     const cmd = input.value.trim().toLowerCase();
     if (!cmd) return;
 
-    output.innerHTML += `<div style="color:#4da6ff; margin-top: 8px;">$ ${input.value}</div>`;
+    output.innerHTML += `<div style="color: #3b82f6; margin-top: 8px;">$ ${input.value}</div>`;
 
     if (cmd === "clear") {
       output.innerHTML = "";
     } else if (commands[cmd]) {
       const response = typeof commands[cmd] === 'function' ? commands[cmd]() : commands[cmd];
-      output.innerHTML += `<div style="color:#fff; margin: 4px 0 8px 12px; white-space: pre-line;">${response}</div>`;
+      output.innerHTML += `<div style="color: #fff; margin: 4px 0 8px 12px; white-space: pre-line;">${response}</div>`;
     } else {
-      output.innerHTML += `<div style="color:#ff4444; margin: 4px 0 8px 12px;">❌ Comando não encontrado. Digite 'help' para ver os comandos disponíveis.</div>`;
+      output.innerHTML += `<div style="color: #ef4444; margin: 4px 0 8px 12px;">❌ Comando não encontrado. Digite 'help' para ver os comandos disponíveis.</div>`;
     }
 
     input.value = "";
@@ -341,7 +318,7 @@ function initMouseParallax() {
     if (profileImg) {
       profileImg.style.transform = `translate(${mouseX * 15}px, ${mouseY * 15}px)`;
     }
-    
+
     if (heroTitle) {
       heroTitle.style.transform = `translate(${mouseX * 8}px, ${mouseY * 8}px)`;
     }
@@ -369,7 +346,7 @@ function initCardGlow() {
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      
+
       targetX = (y - centerY) / 20;
       targetY = (centerX - x) / 20;
     });
@@ -387,9 +364,9 @@ function initCardGlow() {
     function animate() {
       mouseX += (targetX - mouseX) * 0.1;
       mouseY += (targetY - mouseY) * 0.1;
-      
+
       card.style.transform = `perspective(1000px) rotateX(${mouseX}deg) rotateY(${mouseY}deg) scale3d(1.02,1.02,1.02)`;
-      
+
       rafId = requestAnimationFrame(animate);
     }
 
@@ -424,14 +401,14 @@ function initGlowScroll() {
     if (!ticking) {
       requestAnimationFrame(() => {
         const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-        
+
         if (scrollPercent > 5) {
           glow.classList.add('show');
-          glow.style.background = `linear-gradient(90deg, transparent, var(--glow-color) ${scrollPercent}%, var(--glow-color) ${scrollPercent + 10}%, transparent)`;
+          glow.style.background = `linear-gradient(90deg, transparent, #3b82f6 ${scrollPercent}%, #3b82f6 ${scrollPercent + 10}%, transparent)`;
         } else {
           glow.classList.remove('show');
         }
-        
+
         ticking = false;
       });
       ticking = true;
@@ -449,7 +426,7 @@ function preventImageDrag() {
 }
 
 // ============================================
-// CHAT BOT 
+// CHAT BOT - COMPLETO E CORRIGIDO
 // ============================================
 function initChatBot() {
   const btn = document.getElementById("open-chat");
@@ -461,63 +438,88 @@ function initChatBot() {
 
   if (!btn || !chat || !input || !messages) return;
 
+  // LIMPAR MENSAGENS AO INICIAR
+  messages.innerHTML = '';
+
+  // Gerenciar SESSION ID
   let sessionId = localStorage.getItem('chat_session_id');
   if (!sessionId) {
     sessionId = crypto.randomUUID ? crypto.randomUUID() : 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('chat_session_id', sessionId);
   }
+  console.log('🆔 Sessão:', sessionId);
 
+  // Abrir chat
   btn.onclick = () => {
     chat.style.display = "flex";
     input.focus();
   };
 
+  // Fechar chat
   if (closeBtn) {
     closeBtn.onclick = () => {
       chat.style.display = "none";
     };
   }
 
+  // Função para escapar HTML
   function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
+  // ===== FUNÇÃO ADD MESSAGE CORRIGIDA =====
   function addMessage(text, fromAI = true) {
     const wrapper = document.createElement("div");
     wrapper.className = `message-wrapper ${fromAI ? 'bot' : 'user'}`;
-    
+
     const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const escapedText = escapeHtml(text);
-    
+
+    // LIMPAR O TEXTO - remover quebras de linha e espaços extras
+    let cleanText = String(text || '')
+      .replace(/\r\n/g, ' ')   // Windows line endings
+      .replace(/\n/g, ' ')     // Unix line endings
+      .replace(/\r/g, ' ')     // Mac line endings
+      .replace(/\s+/g, ' ')    // substitui múltiplos espaços por um único espaço
+      .trim();                 // remove espaços do início e fim
+
+    // Se ficou vazio, colocar um espaço mínimo
+    if (!cleanText && !fromAI) {
+      cleanText = '•';
+    }
+
+    const escapedText = escapeHtml(cleanText);
+
     if (fromAI) {
       wrapper.innerHTML = `
         <div class="bot-avatar-small">NZ</div>
         <div class="message-content">
           <div class="bot-name-tag">NZ Assistant</div>
-          <div class="message-bubble" style="word-break: break-word; white-space: pre-wrap;">${escapedText}</div>
+          <div class="message-bubble">${escapedText}</div>
           <div class="message-time">${time}</div>
         </div>
       `;
     } else {
       wrapper.innerHTML = `
         <div class="message-content">
-          <div class="message-bubble" style="word-break: break-word; white-space: pre-wrap;">${escapedText}</div>
+          <div class="message-bubble">${escapedText}</div>
           <div class="message-time">${time}</div>
         </div>
       `;
     }
-    
+
     messages.appendChild(wrapper);
     messages.scrollTop = messages.scrollHeight;
   }
 
+  // Typing indicator
   function showTypingIndicator() {
     const wrapper = document.createElement("div");
     wrapper.className = "message-wrapper bot";
     wrapper.id = "typing-indicator";
-    
+
     wrapper.innerHTML = `
       <div class="bot-avatar-small">NZ</div>
       <div class="message-content">
@@ -527,7 +529,7 @@ function initChatBot() {
         </div>
       </div>
     `;
-    
+
     messages.appendChild(wrapper);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -539,6 +541,7 @@ function initChatBot() {
     }
   }
 
+  // Notificação de salvamento
   function showSaveNotification(message, isSuccess = true) {
     const notification = document.createElement('div');
     notification.className = 'save-notification';
@@ -547,6 +550,7 @@ function initChatBot() {
     setTimeout(() => notification.remove(), 3000);
   }
 
+  // Validadores
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
@@ -555,9 +559,18 @@ function initChatBot() {
     return /^\(?[1-9]{2}\)? ?9?[0-9]{4}-?[0-9]{4}$/.test(phone.replace(/\D/g, ''));
   }
 
+  // Histórico da conversa
   let conversationHistory = [];
 
+  // FLAG PARA CONTROLAR SE JÁ ENVIOU MENSAGEM INICIAL
+  let initialMessageSent = false;
+
+  // Mensagem inicial
   setTimeout(async () => {
+    // SÓ ENVIA SE AINDA NÃO ENVIOU
+    if (initialMessageSent) return;
+    initialMessageSent = true;
+
     showTypingIndicator();
 
     try {
@@ -586,7 +599,7 @@ function initChatBot() {
 
       const result = await res.json();
       const botReply = result.reply || "Olá! Sou o assistente do NZ. Como posso te ajudar hoje? 😊";
-      
+
       addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
 
@@ -597,6 +610,7 @@ function initChatBot() {
     }
   }, 500);
 
+  // Enviar mensagem
   async function sendMessage() {
     const value = input.value.trim();
     if (!value) return;
@@ -604,7 +618,7 @@ function initChatBot() {
     input.value = "";
     addMessage(value, false);
     conversationHistory.push({ role: "user", content: value });
-    
+
     showTypingIndicator();
 
     const controller = new AbortController();
@@ -638,7 +652,7 @@ function initChatBot() {
 
       const result = await res.json();
       const botReply = result.reply || "Desculpe, não consegui processar sua solicitação.";
-      
+
       addMessage(botReply, true);
       conversationHistory.push({ role: "assistant", content: botReply });
 
@@ -649,7 +663,7 @@ function initChatBot() {
     } catch (err) {
       clearTimeout(timeoutId);
       removeTypingIndicator();
-      
+
       if (err.name === 'AbortError') {
         addMessage("⏰ A resposta está demorando. Por favor, tente novamente ou chame NZ no WhatsApp (71) 92227-288", true);
       } else {
@@ -658,6 +672,7 @@ function initChatBot() {
     }
   }
 
+  // Salvar lead no Supabase
   async function saveLead(result, lastMessage) {
     if (!supabaseClient) {
       console.warn('Supabase não disponível - lead não salvo');
@@ -691,14 +706,14 @@ function initChatBot() {
       }
 
       let existingLead = null;
-      
+
       if (leadData.email) {
         const { data } = await supabaseClient
           .from('leads')
           .select('id, interaction_count')
           .eq('email', leadData.email)
           .maybeSingle();
-        
+
         existingLead = data;
       }
 
@@ -716,17 +731,17 @@ function initChatBot() {
           .eq('id', existingLead.id);
 
         if (error) throw error;
-        
+
         console.log("✅ Lead atualizado!");
         showSaveNotification('✅ Informações atualizadas!', true);
-        
+
       } else {
         const { error } = await supabaseClient
           .from('leads')
           .insert([leadData]);
 
         if (error) throw error;
-        
+
         console.log("✅ Novo lead salvo!");
         showSaveNotification('✅ Informações salvas! Entraremos em contato.', true);
       }
@@ -737,6 +752,7 @@ function initChatBot() {
     }
   }
 
+  // Event listeners
   input.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       sendMessage();
