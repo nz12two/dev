@@ -1,3 +1,60 @@
+// ===== EFEITO DE DIGITAÇÃO =====
+function iniciarEfeitoDigitacao() {
+  const frases = [
+    "Desenvolvedor Full Stack",
+    "Criador de Solutions",
+    "Especialista em Automação"
+  ];
+  
+  const elemento = document.querySelector('.sub-titulo');
+  if (!elemento) return;
+  
+  let fraseIndex = 0;
+  let charIndex = 0;
+  let apagando = false;
+  let velocidade = 100;
+  
+  function digitar() {
+    const fraseAtual = frases[fraseIndex];
+    
+    if (!apagando) {
+      elemento.textContent = fraseAtual.substring(0, charIndex + 1);
+      charIndex++;
+      velocidade = 100;
+    } else {
+      elemento.textContent = fraseAtual.substring(0, charIndex - 1);
+      charIndex--;
+      velocidade = 50;
+    }
+    
+    if (!apagando && charIndex === fraseAtual.length) {
+      velocidade = 2000;
+      apagando = true;
+    } else if (apagando && charIndex === 0) {
+      apagando = false;
+      fraseIndex = (fraseIndex + 1) % frases.length;
+      velocidade = 500;
+    }
+    
+    setTimeout(digitar, velocidade);
+  }
+  
+  digitar();
+}
+
+// ===== NAVEGAÇÃO COM SCROLL =====
+function configurarNavegacao() {
+  const nav = document.querySelector('.navegacao');
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      nav.style.padding = '0.7rem 0';
+    } else {
+      nav.style.padding = '1rem 0';
+    }
+  });
+}
+
 // ===== BUSCAR PROJETOS DO GITHUB =====
 async function buscarProjetosGitHub() {
   const container = document.getElementById('projetos-caixa');
@@ -359,4 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarScrollSuave();
   configurarTooltips();
   configurarFAQ();
+  iniciarEfeitoDigitacao();
+  configurarNavegacao();
 });
