@@ -96,62 +96,65 @@ async function buscarProjetosGitHub() {
 
     container.innerHTML = '';
 
-    repos.forEach(repo => {
+    repos.forEach((repo, index) => {
       const linguagens = repo.language ? [repo.language] : ['Sem linguagem'];
 
       const card = document.createElement('div');
-      card.className = 'projeto-card fade-in';
+      card.className = 'projeto-card';
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
 
-      card.innerHTML = `
-        <div class="projeto-imagem-container">
-          <img
-            loading="lazy"
-            src="https://opengraph.githubassets.com/1/${repo.full_name}"
-            alt="${repo.name}"
-            class="projeto-imagem"
-            onerror="this.src='https://via.placeholder.com/400x200/1e293b/4f46e5?text=Projeto'"
-          >
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'projeto-imagem-container';
 
-          <div class="projeto-overlay">
-            <a href="${repo.html_url}" target="_blank" class="projeto-link" aria-label="Ver no GitHub">
-              <i class="fab fa-github"></i>
-            </a>
-          </div>
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.src = `https://opengraph.githubassets.com/1/${repo.full_name}`;
+      img.alt = repo.name;
+      img.className = 'projeto-imagem';
+      img.onerror = function () {
+        imgContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1e293b;color:#6366f1;font-size:3rem"><i class="fab fa-github"></i></div>';
+      };
+
+      const overlay = document.createElement('div');
+      overlay.className = 'projeto-overlay';
+      const link = document.createElement('a');
+      link.href = repo.html_url;
+      link.target = '_blank';
+      link.className = 'projeto-link';
+      link.setAttribute('aria-label', 'Ver no GitHub');
+      link.innerHTML = '<i class="fab fa-github"></i>';
+      overlay.appendChild(link);
+
+      imgContainer.appendChild(img);
+      imgContainer.appendChild(overlay);
+
+      const info = document.createElement('div');
+      info.className = 'projeto-info';
+      info.innerHTML = `
+        <h3 class="projeto-titulo">${repo.name.replace(/-/g, ' ')}</h3>
+        <p class="projeto-descricao">${repo.description || 'Projeto desenvolvido e funcional.'}</p>
+        <div class="projeto-tags">
+          ${linguagens.map(lang => `<span>${lang}</span>`).join('')}
+          ${repo.stargazers_count > 0 ? `<span>⭐ ${repo.stargazers_count}</span>` : ''}
+          ${repo.forks_count > 0 ? `<span>🍴 ${repo.forks_count}</span>` : ''}
         </div>
-
-        <div class="projeto-info">
-          <h3 class="projeto-titulo">${repo.name.replace(/-/g, ' ')}</h3>
-
-          <p class="projeto-descricao">
-            ${repo.description || 'Projeto desenvolvido e funcional.'}
-          </p>
-
-          <div class="projeto-tags">
-            ${linguagens.map(lang => `<span>${lang}</span>`).join('')}
-            ${repo.stargazers_count > 0 ? `<span>⭐ ${repo.stargazers_count}</span>` : ''}
-            ${repo.forks_count > 0 ? `<span>🍴 ${repo.forks_count}</span>` : ''}
-          </div>
-
-          <div class="projeto-meta">
-            <span>
-              <i class="far fa-calendar-alt"></i>
-              ${new Date(repo.updated_at).toLocaleDateString('pt-BR')}
-            </span>
-
-            ${repo.homepage ? `
-              <a href="${repo.homepage}" target="_blank" class="projeto-btn">
-                Ver Demo <i class="fas fa-external-link-alt"></i>
-              </a>
-            ` : ''}
-
-            <a href="${repo.html_url}" target="_blank" class="projeto-btn">
-              Ver Código <i class="fab fa-github"></i>
-            </a>
-          </div>
+        <div class="projeto-meta">
+          <span><i class="far fa-calendar-alt"></i> ${new Date(repo.updated_at).toLocaleDateString('pt-BR')}</span>
+          ${repo.homepage ? `<a href="${repo.homepage}" target="_blank" class="projeto-btn">Ver Demo <i class="fas fa-external-link-alt"></i></a>` : ''}
+          <a href="${repo.html_url}" target="_blank" class="projeto-btn">Ver Código <i class="fab fa-github"></i></a>
         </div>
       `;
 
+      card.appendChild(imgContainer);
+      card.appendChild(info);
       container.appendChild(card);
+
+      setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 + index * 150);
     });
 
   } catch (error) {
@@ -173,7 +176,6 @@ async function buscarProjetosGitHub() {
   }
 }
 
-
 // ===== MENU MOBILE =====
 function configurarMenuMobile() {
   const menuToggle = document.querySelector('.menu-toggle');
@@ -186,74 +188,42 @@ function configurarMenuMobile() {
   });
 }
 
-
 // ===== FORMULÁRIO DE CONTATO =====
 function configurarFormulario() {
   const metodoContato = document.getElementById('metodo-contato');
   const botaoContatar = document.getElementById('botao-contatar');
   const tipoMensagem = document.getElementById('tipo-mensagem');
-
   if (!metodoContato || !botaoContatar) return;
 
   function atualizarBotaoContato() {
     const metodo = metodoContato.value;
-
-    const textos = {
-      whatsapp: 'Conversar no WhatsApp',
-      email: 'Enviar E-mail'
-    };
-
-    const icons = {
-      whatsapp: 'fab fa-whatsapp',
-      email: 'fas fa-envelope'
-    };
-
+    const textos = { whatsapp: 'Conversar no WhatsApp', email: 'Enviar E-mail' };
+    const icons = { whatsapp: 'fab fa-whatsapp', email: 'fas fa-envelope' };
     const btnText = botaoContatar.querySelector('.btn-text');
     const btnIcon = botaoContatar.querySelector('.btn-icon i');
-
     if (btnText) btnText.textContent = textos[metodo];
     if (btnIcon) btnIcon.className = icons[metodo];
   }
 
   function redirecionarContato() {
     const metodo = metodoContato.value;
-
-    const tipoIndex = tipoMensagem
-      ? tipoMensagem.selectedIndex
-      : 0;
-
-    const tipoTexto = tipoMensagem
-      ? tipoMensagem.options[tipoIndex].text
-      : 'Orçamento de Projeto';
-
+    const tipoIndex = tipoMensagem ? tipoMensagem.selectedIndex : 0;
+    const tipoTexto = tipoMensagem ? tipoMensagem.options[tipoIndex].text : 'Orçamento de Projeto';
     const mensagem = `Olá NZ! Gostaria de conversar sobre: ${tipoTexto}`;
 
     if (metodo === 'whatsapp') {
-      const numero = '5571992227288';
-
-      const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-
-      window.open(url, '_blank');
-
+      window.open(`https://wa.me/5571992227288?text=${encodeURIComponent(mensagem)}`, '_blank');
     } else {
       const email = 'nzjr123@gmail.com';
       const assunto = `Contato via Portfólio - ${tipoTexto}`;
-      const corpo = `${mensagem}`;
-
-
-      const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-
-
-      window.open(url, '_blank');
+      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(assunto)}&body=${encodeURIComponent(mensagem)}`, '_blank');
     }
   }
 
   metodoContato.addEventListener('change', atualizarBotaoContato);
   botaoContatar.addEventListener('click', redirecionarContato);
-
   atualizarBotaoContato();
 }
-
 
 // ===== CONTADOR ANIMADO =====
 let contadorExecutado = false;
@@ -280,20 +250,10 @@ function animateCounter() {
   });
 }
 
-
 // ===== OBSERVER PARA ANIMAÇÕES =====
 function configurarObserver() {
   const elementos = document.querySelectorAll(
-    `
-    .projeto-card,
-    .servico-card,
-    .diferencial-item,
-    .processo-item,
-    .depoimento-card,
-    .faq-item,
-    .contato-link,
-    .sobre-stats
-    `
+    '.projeto-card, .servico-card, .diferencial-item, .depoimento-card, .faq-item, .contato-link, .sobre-stats'
   );
 
   const observer = new IntersectionObserver(
@@ -310,12 +270,8 @@ function configurarObserver() {
     { threshold: 0.15 }
   );
 
-  elementos.forEach(el => {
-    el.style.transitionDelay = '0s';
-    observer.observe(el);
-  });
+  elementos.forEach(el => observer.observe(el));
 }
-
 
 // ===== BOTÃO VOLTAR AO TOPO =====
 function configurarBackToTop() {
@@ -338,7 +294,6 @@ function configurarBackToTop() {
     });
   });
 }
-
 
 // ===== SCROLL SUAVE =====
 function configurarScrollSuave() {
@@ -372,39 +327,34 @@ function configurarFAQ() {
       if (!ativo) {
         item.classList.add('active');
       }
-
     });
   });
 }
 
 // ===== TOOLTIP =====
 function configurarTooltips() {
+  const style = document.createElement('style');
+  style.textContent = `.tooltip{position:fixed;background:var(--fundo-destaque);color:var(--texto-primario);padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;pointer-events:none;z-index:9999;border:1px solid rgba(99,102,241,0.3);white-space:nowrap}`;
+  document.head.appendChild(style);
+
   document.querySelectorAll('[data-tooltip]').forEach(element => {
     let tooltip = null;
     element.addEventListener('mouseenter', function () {
+      const text = this.getAttribute('data-tooltip');
+      if (!text) return;
       tooltip = document.createElement('div');
       tooltip.className = 'tooltip';
-      tooltip.textContent = this.getAttribute('data-tooltip');
+      tooltip.textContent = text;
       document.body.appendChild(tooltip);
       const rect = this.getBoundingClientRect();
-      tooltip.style.top =
-        rect.top - tooltip.offsetHeight - 10 + window.scrollY + 'px';
-      tooltip.style.left =
-        rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-
+      tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + 'px';
+      tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
     });
-
     element.addEventListener('mouseleave', function () {
-
-      if (tooltip) {
-        tooltip.remove();
-        tooltip = null;
-      }
-
+      if (tooltip) { tooltip.remove(); tooltip = null; }
     });
   });
 }
-
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
