@@ -1,371 +1,452 @@
-// ===== EFEITO DE DIGITAÇÃO =====
-function iniciarEfeitoDigitacao() {
-  const frases = [
-    "Desenvolvedor Full Stack",
-    "Criador de Solutions",
-    "Especialista em Automação"
-  ];
-  
-  const elemento = document.querySelector('.sub-titulo');
-  if (!elemento) return;
-  
-  let fraseIndex = 0;
-  let charIndex = 0;
-  let apagando = false;
-  let velocidade = 100;
-  
-  function digitar() {
-    const fraseAtual = frases[fraseIndex];
-    
-    if (!apagando) {
-      elemento.textContent = fraseAtual.substring(0, charIndex + 1);
-      charIndex++;
-      velocidade = 100;
-    } else {
-      elemento.textContent = fraseAtual.substring(0, charIndex - 1);
-      charIndex--;
-      velocidade = 50;
+document.addEventListener('DOMContentLoaded', function () {
+
+  // ===================================================================
+  // CUSTOM CURSOR
+  // ===================================================================
+  var cursorGlow = document.querySelector('.cursor-glow')
+  var cursorDot = document.querySelector('.cursor-dot')
+  var cursorTrail = document.querySelector('.cursor-trail')
+  var trailX = 0, trailY = 0
+  var mouseX = 0, mouseY = 0
+
+  document.addEventListener('mousemove', function (e) {
+    mouseX = e.clientX
+    mouseY = e.clientY
+    if (cursorGlow) {
+      cursorGlow.style.left = mouseX + 'px'
+      cursorGlow.style.top = mouseY + 'px'
     }
-    
-    if (!apagando && charIndex === fraseAtual.length) {
-      velocidade = 2000;
-      apagando = true;
-    } else if (apagando && charIndex === 0) {
-      apagando = false;
-      fraseIndex = (fraseIndex + 1) % frases.length;
-      velocidade = 500;
+    if (cursorDot) {
+      cursorDot.style.left = mouseX + 'px'
+      cursorDot.style.top = mouseY + 'px'
     }
-    
-    setTimeout(digitar, velocidade);
+  })
+
+  // Smooth trail following cursor
+  function trailLoop() {
+    trailX += (mouseX - trailX) * 0.08
+    trailY += (mouseY - trailY) * 0.08
+    if (cursorTrail) {
+      cursorTrail.style.left = trailX + 'px'
+      cursorTrail.style.top = trailY + 'px'
+    }
+    requestAnimationFrame(trailLoop)
   }
-  
-  digitar();
-}
+  trailLoop()
 
-// ===== NAVEGAÇÃO COM SCROLL =====
-function configurarNavegacao() {
-  const nav = document.querySelector('.navegacao');
-  
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 50) {
-      nav.style.padding = '0.7rem 0';
-    } else {
-      nav.style.padding = '1rem 0';
+  // Hover effect on interactive elements
+  var hoverTargets = document.querySelectorAll('a, button, .btn, .faq-q, .skill, .nav-link')
+  hoverTargets.forEach(function (el) {
+    el.addEventListener('mouseenter', function () {
+      if (cursorDot) cursorDot.classList.add('hovering')
+    })
+    el.addEventListener('mouseleave', function () {
+      if (cursorDot) cursorDot.classList.remove('hovering')
+    })
+  })
+
+  // ===================================================================
+  // NAV
+  // ===================================================================
+  var nav = document.querySelector('.nav')
+  var navProgress = document.querySelector('.nav-progress')
+  var navToggle = document.querySelector('.nav-toggle')
+  var navMenu = document.querySelector('.nav-menu')
+  var navLinks = document.querySelectorAll('.nav-link')
+
+  window.addEventListener('scroll', function () {
+    var y = window.scrollY
+    if (nav) nav.classList.toggle('scrolled', y > 60)
+    if (navProgress) {
+      var max = document.documentElement.scrollHeight - window.innerHeight
+      navProgress.style.width = (y / max) * 100 + '%'
     }
-  });
-}
+    var current = ''
+    document.querySelectorAll('section[id]').forEach(function (sec) {
+      if (y >= sec.offsetTop - 120) current = sec.id
+    })
+    navLinks.forEach(function (link) {
+      if (link) link.classList.toggle('active', link.getAttribute('href') === '#' + current)
+    })
+  })
 
-// ===== BUSCAR PROJETOS DO GITHUB =====
-async function buscarProjetosGitHub() {
-  const container = document.getElementById('projetos-caixa');
-  const loading = document.getElementById('loading-projetos');
-  const username = 'nz12two';
+  if (navToggle && navMenu) {
+    navToggle.addEventListener('click', function () {
+      navToggle.classList.toggle('active')
+      navMenu.classList.toggle('active')
+    })
+  }
 
-  if (!container || !loading) return;
+  navLinks.forEach(function (link) {
+    link.addEventListener('click', function () {
+      if (navToggle) navToggle.classList.remove('active')
+      if (navMenu) navMenu.classList.remove('active')
+    })
+  })
 
-  try {
-    const response = await fetch(
-      `https://api.github.com/users/${username}/repos?sort=updated&per_page=6`,
-      {
-        headers: {
-          'Accept': 'application/vnd.github+json'
+  // ===================================================================
+  // TEXT SCRAMBLE EFFECT
+  // ===================================================================
+  function scrambleText(el) {
+    if (!el) return
+    var originalText = el.getAttribute('data-text') || el.textContent
+    var chars = '!@#$%&?+*ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    var frame = 0
+    var totalFrames = 20
+    var interval = 50
+
+    function shuffle() {
+      var result = ''
+      var progress = frame / totalFrames
+      var revealCount = Math.floor(originalText.length * progress)
+
+      for (var i = 0; i < originalText.length; i++) {
+        if (i < revealCount) {
+          result += originalText[i]
+        } else if (originalText[i] === ' ') {
+          result += ' '
+        } else {
+          result += chars[Math.floor(Math.random() * chars.length)]
         }
       }
-    );
+      el.textContent = result
+      frame++
 
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('Limite da API do GitHub atingido');
-      }
-      throw new Error('Erro ao buscar projetos');
-    }
-
-    const repos = await response.json();
-
-    loading.style.display = 'none';
-
-    if (!repos.length) {
-      container.innerHTML = `
-        <div class="sem-projetos">
-          <i class="fas fa-folder-open"></i>
-          <p>Nenhum repositório público encontrado</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = '';
-
-    repos.forEach((repo, index) => {
-      const linguagens = repo.language ? [repo.language] : ['Sem linguagem'];
-
-      const card = document.createElement('div');
-      card.className = 'projeto-card';
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
-      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-
-      const imgContainer = document.createElement('div');
-      imgContainer.className = 'projeto-imagem-container';
-
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.src = `https://opengraph.githubassets.com/1/${repo.full_name}`;
-      img.alt = repo.name;
-      img.className = 'projeto-imagem';
-      img.onerror = function () {
-        imgContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1e293b;color:#6366f1;font-size:3rem"><i class="fab fa-github"></i></div>';
-      };
-
-      const overlay = document.createElement('div');
-      overlay.className = 'projeto-overlay';
-      const link = document.createElement('a');
-      link.href = repo.html_url;
-      link.target = '_blank';
-      link.className = 'projeto-link';
-      link.setAttribute('aria-label', 'Ver no GitHub');
-      link.innerHTML = '<i class="fab fa-github"></i>';
-      overlay.appendChild(link);
-
-      imgContainer.appendChild(img);
-      imgContainer.appendChild(overlay);
-
-      const info = document.createElement('div');
-      info.className = 'projeto-info';
-      info.innerHTML = `
-        <h3 class="projeto-titulo">${repo.name.replace(/-/g, ' ')}</h3>
-        <p class="projeto-descricao">${repo.description || 'Projeto desenvolvido e funcional.'}</p>
-        <div class="projeto-tags">
-          ${linguagens.map(lang => `<span>${lang}</span>`).join('')}
-          ${repo.stargazers_count > 0 ? `<span>⭐ ${repo.stargazers_count}</span>` : ''}
-          ${repo.forks_count > 0 ? `<span>🍴 ${repo.forks_count}</span>` : ''}
-        </div>
-        <div class="projeto-meta">
-          <span><i class="far fa-calendar-alt"></i> ${new Date(repo.updated_at).toLocaleDateString('pt-BR')}</span>
-          ${repo.homepage ? `<a href="${repo.homepage}" target="_blank" class="projeto-btn">Ver Demo <i class="fas fa-external-link-alt"></i></a>` : ''}
-          <a href="${repo.html_url}" target="_blank" class="projeto-btn">Ver Código <i class="fab fa-github"></i></a>
-        </div>
-      `;
-
-      card.appendChild(imgContainer);
-      card.appendChild(info);
-      container.appendChild(card);
-
-      setTimeout(() => {
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-      }, 100 + index * 150);
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    loading.innerHTML = `
-      <i class="fas fa-exclamation-triangle"></i>
-      <p>Erro ao carregar projetos.</p>
-
-      <button
-        onclick="buscarProjetosGitHub()"
-        class="btn btn-primary"
-        style="margin-top:1rem"
-      >
-        <i class="fas fa-sync-alt"></i>
-        Tentar novamente
-      </button>
-    `;
-  }
-}
-
-// ===== MENU MOBILE =====
-function configurarMenuMobile() {
-  const menuToggle = document.querySelector('.menu-toggle');
-  const menu = document.querySelector('.menu');
-
-  if (!menuToggle || !menu) return;
-
-  menuToggle.addEventListener('click', () => {
-    menu.classList.toggle('active');
-  });
-}
-
-// ===== FORMULÁRIO DE CONTATO =====
-function configurarFormulario() {
-  const metodoContato = document.getElementById('metodo-contato');
-  const botaoContatar = document.getElementById('botao-contatar');
-  const tipoMensagem = document.getElementById('tipo-mensagem');
-  if (!metodoContato || !botaoContatar) return;
-
-  function atualizarBotaoContato() {
-    const metodo = metodoContato.value;
-    const textos = { whatsapp: 'Conversar no WhatsApp', email: 'Enviar E-mail' };
-    const icons = { whatsapp: 'fab fa-whatsapp', email: 'fas fa-envelope' };
-    const btnText = botaoContatar.querySelector('.btn-text');
-    const btnIcon = botaoContatar.querySelector('.btn-icon i');
-    if (btnText) btnText.textContent = textos[metodo];
-    if (btnIcon) btnIcon.className = icons[metodo];
-  }
-
-  function redirecionarContato() {
-    const metodo = metodoContato.value;
-    const tipoIndex = tipoMensagem ? tipoMensagem.selectedIndex : 0;
-    const tipoTexto = tipoMensagem ? tipoMensagem.options[tipoIndex].text : 'Orçamento de Projeto';
-    const mensagem = `Olá NZ! Gostaria de conversar sobre: ${tipoTexto}`;
-
-    if (metodo === 'whatsapp') {
-      window.open(`https://wa.me/5571992227288?text=${encodeURIComponent(mensagem)}`, '_blank');
-    } else {
-      const email = 'nzjr123@gmail.com';
-      const assunto = `Contato via Portfólio - ${tipoTexto}`;
-      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(assunto)}&body=${encodeURIComponent(mensagem)}`, '_blank');
-    }
-  }
-
-  metodoContato.addEventListener('change', atualizarBotaoContato);
-  botaoContatar.addEventListener('click', redirecionarContato);
-  atualizarBotaoContato();
-}
-
-// ===== CONTADOR ANIMADO =====
-let contadorExecutado = false;
-
-function animateCounter() {
-  if (contadorExecutado) return;
-  contadorExecutado = true;
-  const counters = document.querySelectorAll('.stat-number');
-  counters.forEach(counter => {
-    const target = +counter.getAttribute('data-count');
-    let count = 0;
-    const increment = target / 100;
-    const update = () => {
-      count += increment;
-      if (count < target) {
-        counter.innerText = Math.ceil(count);
-        requestAnimationFrame(update);
+      if (frame <= totalFrames) {
+        setTimeout(shuffle, interval - (frame * 1.5))
       } else {
-        counter.innerText = target;
+        el.textContent = originalText
       }
-    };
-
-    update();
-  });
-}
-
-// ===== OBSERVER PARA ANIMAÇÕES =====
-function configurarObserver() {
-  const elementos = document.querySelectorAll(
-    '.projeto-card, .servico-card, .diferencial-item, .depoimento-card, .faq-item, .contato-link, .sobre-stats'
-  );
-
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        if (entry.target.classList.contains('sobre-stats')) {
-          animateCounter();
-        }
-        entry.target.classList.add('animate');
-        observer.unobserve(entry.target);
-      });
-    },
-    { threshold: 0.15 }
-  );
-
-  elementos.forEach(el => observer.observe(el));
-}
-
-// ===== BOTÃO VOLTAR AO TOPO =====
-function configurarBackToTop() {
-  const backToTop = document.getElementById('back-to-top');
-
-  if (!backToTop) return;
-
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) {
-      backToTop.classList.add('visible');
-    } else {
-      backToTop.classList.remove('visible');
     }
-  });
 
-  backToTop.addEventListener('click', () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  });
-}
+    shuffle()
+  }
 
-// ===== SCROLL SUAVE =====
-function configurarScrollSuave() {
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      const href = this.getAttribute('href');
-      if (href === '#') return;
-      const target = document.querySelector(href);
-      if (!target) return;
-      e.preventDefault();
-      window.scrollTo({
-        top: target.offsetTop - 80,
-        behavior: 'smooth'
-      });
+  // Scramble hero text on page load
+  var scrambleEls = document.querySelectorAll('.scramble')
+  scrambleEls.forEach(function (el) {
+    setTimeout(function () { scrambleText(el) }, 300)
+  })
 
-      const menu = document.querySelector('.menu');
-      if (menu) menu.classList.remove('active');
-    });
-  });
-}
-
-// ===== FAQ ACCORDION =====
-function configurarFAQ() {
-  const itens = document.querySelectorAll('.faq-item');
-
-  itens.forEach(item => {
-    const pergunta = item.querySelector('.faq-pergunta');
-    pergunta.addEventListener('click', () => {
-      const ativo = item.classList.contains('active');
-      itens.forEach(i => i.classList.remove('active'));
-      if (!ativo) {
-        item.classList.add('active');
+  // Scramble section titles when they scroll into view
+  var titleScrambled = {}
+  var titleObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        var scrambleTargets = entry.target.querySelectorAll('.gtext')
+        scrambleTargets.forEach(function (el) {
+          var key = el.textContent.trim()
+          if (!titleScrambled[key]) {
+            titleScrambled[key] = true
+            scrambleText(el)
+          }
+        })
+        titleObs.unobserve(entry.target)
       }
-    });
-  });
-}
+    })
+  }, { threshold: 0.3 })
 
-// ===== TOOLTIP =====
-function configurarTooltips() {
-  const style = document.createElement('style');
-  style.textContent = `.tooltip{position:fixed;background:var(--fundo-destaque);color:var(--texto-primario);padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;pointer-events:none;z-index:9999;border:1px solid rgba(99,102,241,0.3);white-space:nowrap}`;
-  document.head.appendChild(style);
+  document.querySelectorAll('.sec-head').forEach(function (head) {
+    titleObs.observe(head)
+  })
 
-  document.querySelectorAll('[data-tooltip]').forEach(element => {
-    let tooltip = null;
-    element.addEventListener('mouseenter', function () {
-      const text = this.getAttribute('data-tooltip');
-      if (!text) return;
-      tooltip = document.createElement('div');
-      tooltip.className = 'tooltip';
-      tooltip.textContent = text;
-      document.body.appendChild(tooltip);
-      const rect = this.getBoundingClientRect();
-      tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + 'px';
-      tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
-    });
-    element.addEventListener('mouseleave', function () {
-      if (tooltip) { tooltip.remove(); tooltip = null; }
-    });
-  });
-}
+  // ===================================================================
+  // MAGNETIC BUTTONS
+  // ===================================================================
+  var magnetBtns = document.querySelectorAll('.magnet-btn')
 
-// ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', () => {
-  buscarProjetosGitHub();
-  configurarMenuMobile();
-  configurarFormulario();
-  configurarObserver();
-  configurarBackToTop();
-  configurarScrollSuave();
-  configurarTooltips();
-  configurarFAQ();
-  iniciarEfeitoDigitacao();
-  configurarNavegacao();
-});
+  magnetBtns.forEach(function (btn) {
+    btn.addEventListener('mousemove', function (e) {
+      var rect = btn.getBoundingClientRect()
+      var x = e.clientX - rect.left - rect.width / 2
+      var y = e.clientY - rect.top - rect.height / 2
+      var strength = parseInt(btn.getAttribute('data-strength')) || 10
+      btn.style.transform = 'translate(' + (x / strength) + 'px, ' + (y / strength) + 'px)'
+    })
+
+    btn.addEventListener('mouseleave', function () {
+      btn.style.transform = 'translate(0, 0)'
+    })
+  })
+
+  // ===================================================================
+  // HERO MOUSE PARALLAX
+  // ===================================================================
+  var layers = document.querySelectorAll('.layer')
+
+  if (layers.length) {
+    document.querySelector('.hero').addEventListener('mousemove', function (e) {
+      var rect = this.getBoundingClientRect()
+      var x = (e.clientX - rect.left) / rect.width - 0.5
+      var y = (e.clientY - rect.top) / rect.height - 0.5
+
+      layers.forEach(function (layer) {
+        var depth = parseFloat(layer.getAttribute('data-depth')) || 0.04
+        layer.style.transform = 'translate(' + (x * depth * 100) + 'px, ' + (y * depth * 100) + 'px)'
+      })
+    })
+  }
+
+  // ===================================================================
+  // BLOP MORPH - UPDATE SVG PATH
+  // ===================================================================
+  var blobPath = document.querySelector('.blob-path')
+  if (blobPath) {
+    var points = []
+
+    function generateBlob() {
+      var cx = 300, cy = 300, r = 200
+      var numPoints = 8
+      var path = ''
+      for (var i = 0; i < numPoints; i++) {
+        var angle = (i / numPoints) * Math.PI * 2
+        var variance = (Math.random() - 0.5) * 80
+        var px = cx + Math.cos(angle) * (r + variance)
+        var py = cy + Math.sin(angle) * (r + variance)
+        if (i === 0) {
+          path += 'M' + px + ',' + py
+        } else {
+          var prevAngle = ((i - 1) / numPoints) * Math.PI * 2
+          var prevVariance = (Math.random() - 0.5) * 80
+          var cpx1 = cx + Math.cos(prevAngle + 0.3) * (r + prevVariance)
+          var cpy1 = cy + Math.sin(prevAngle + 0.3) * (r + prevVariance)
+          var cpx2 = cx + Math.cos(angle - 0.3) * (r + variance)
+          var cpy2 = cy + Math.sin(angle - 0.3) * (r + variance)
+          path += 'C' + cpx1 + ',' + cpy1 + ' ' + cpx2 + ',' + cpy2 + ' ' + px + ',' + py
+        }
+      }
+      path += 'Z'
+      blobPath.setAttribute('d', path)
+    }
+
+    generateBlob()
+    setInterval(generateBlob, 4000)
+  }
+
+  // ===================================================================
+  // GITHUB PROJECTS
+  // ===================================================================
+  var grid = document.getElementById('proj-grid')
+  var loading = document.getElementById('proj-loading')
+
+  if (grid) {
+    fetch('https://api.github.com/users/nz12two/repos?sort=updated&per_page=6&type=owner')
+      .then(function (r) {
+        if (!r.ok) throw new Error('GitHub error')
+        return r.json()
+      })
+      .then(function (repos) {
+        if (loading) loading.style.display = 'none'
+        if (!repos || repos.length === 0) {
+          grid.innerHTML = '<div class="proj-loading"><i class="fas fa-folder-open"></i><p>Nenhum projeto publico encontrado.</p></div>'
+          return
+        }
+        var html = ''
+        for (var i = 0; i < repos.length; i++) {
+          var r = repos[i]
+          var desc = r.description || 'Sem descricao disponivel.'
+          var tags = []
+          if (r.language) tags.push(r.language)
+          if (r.topics) {
+            for (var t = 0; t < r.topics.length && t < 3; t++) {
+              if (r.topics[t] !== r.language) tags.push(r.topics[t])
+            }
+          }
+          var date = new Date(r.updated_at).toLocaleDateString('pt-BR')
+          var name = r.name.replace(/-/g, ' ').replace(/_/g, ' ')
+          var tagHtml = ''
+          if (tags.length > 0) {
+            tagHtml += '<div class="proj-tags">'
+            for (var t = 0; t < tags.length; t++) {
+              tagHtml += '<span>' + tags[t] + '</span>'
+            }
+            tagHtml += '</div>'
+          }
+          html += '<div class="proj-card">'
+          html += '<div class="proj-img-wrap">'
+          html += '<div class="proj-img" style="background:linear-gradient(135deg,#141b38,#070b17);display:flex;align-items:center;justify-content:center;font-size:38px;color:#4a5a80;"><i class="fab fa-github"></i></div>'
+          html += '<div class="proj-overlay"><a href="' + r.html_url + '" target="_blank" class="proj-link"><i class="fas fa-external-link-alt"></i></a></div>'
+          html += '</div>'
+          html += '<div class="proj-info">'
+          html += '<h3 class="proj-title">' + name + '</h3>'
+          html += '<p class="proj-desc">' + desc + '</p>'
+          html += tagHtml
+          html += '<div class="proj-meta">'
+          html += '<span><i class="fas fa-star"></i> ' + r.stargazers_count + '</span>'
+          html += '<span><i class="fas fa-code-fork"></i> ' + r.forks_count + '</span>'
+          html += '<span><i class="fas fa-calendar-alt"></i> ' + date + '</span>'
+          html += '</div></div></div>'
+        }
+        grid.innerHTML = html
+      })
+      .catch(function () {
+        if (loading) loading.style.display = 'none'
+        grid.innerHTML = '<div class="proj-loading"><i class="fas fa-exclamation-triangle"></i><p>Erro ao carregar projetos.</p></div>'
+      })
+  }
+
+  // ===================================================================
+  // FAQ
+  // ===================================================================
+  var faqItems = document.querySelectorAll('.faq-item')
+  for (var i = 0; i < faqItems.length; i++) {
+    ;(function (item) {
+      var q = item.querySelector('.faq-q')
+      if (q) {
+        q.addEventListener('click', function () {
+          var active = item.classList.contains('active')
+          for (var j = 0; j < faqItems.length; j++) {
+            faqItems[j].classList.remove('active')
+          }
+          if (!active) item.classList.add('active')
+        })
+      }
+    })(faqItems[i])
+  }
+
+  // ===================================================================
+  // STAT COUNTER
+  // ===================================================================
+  var statEls = document.querySelectorAll('.stat-num[data-num]')
+  for (var i = 0; i < statEls.length; i++) {
+    ;(function (el) {
+      var obs = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) {
+          obs.unobserve(el)
+          var target = parseInt(el.getAttribute('data-num')) || 0
+          var cur = 0
+          var step = Math.max(1, Math.floor(target / 40))
+          function countUp() {
+            cur += step
+            if (cur >= target) {
+              el.textContent = target + '+'
+              return
+            }
+            el.textContent = cur
+            requestAnimationFrame(function () { setTimeout(countUp, 16) })
+          }
+          countUp()
+        }
+      }, { threshold: 0.5 })
+      obs.observe(el)
+    })(statEls[i])
+  }
+
+  // ===================================================================
+  // SCROLL REVEAL
+  // ===================================================================
+  var revealEls = document.querySelectorAll('.reveal-on-scroll')
+
+  for (var i = 0; i < revealEls.length; i++) {
+    ;(function (el) {
+      el.style.opacity = '0'
+      el.style.transform = 'translateY(30px)'
+      el.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)'
+
+      var obs = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) {
+          el.style.opacity = '1'
+          el.style.transform = 'translateY(0)'
+          obs.unobserve(el)
+        }
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
+      obs.observe(el)
+
+      // Fallback
+      var revealed = false
+      function checkScroll() {
+        if (!revealed) {
+          var rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight - 60) {
+            el.style.opacity = '1'
+            el.style.transform = 'translateY(0)'
+            revealed = true
+          }
+        }
+      }
+      window.addEventListener('scroll', checkScroll)
+      setTimeout(checkScroll, 3000)
+    })(revealEls[i])
+  }
+
+  // ===================================================================
+  // BACK TO TOP
+  // ===================================================================
+  var backTop = document.getElementById('back-top')
+  if (backTop) {
+    window.addEventListener('scroll', function () {
+      backTop.classList.toggle('visible', window.scrollY > 400)
+    })
+    backTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }
+
+  // ===================================================================
+  // 3D TILT CARDS
+  // ===================================================================
+  var tiltCards = document.querySelectorAll('[data-tilt]')
+  for (var i = 0; i < tiltCards.length; i++) {
+    (function (card) {
+      card.addEventListener('mousemove', function (e) {
+        var rect = card.getBoundingClientRect()
+        var x = (e.clientX - rect.left) / rect.width
+        var y = (e.clientY - rect.top) / rect.height
+        var tiltX = (y - 0.5) * 12
+        var tiltY = (x - 0.5) * -12
+        card.style.transform = 'perspective(800px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) scale3d(1.02,1.02,1.02)'
+      })
+      card.addEventListener('mouseleave', function () {
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)'
+      })
+    })(tiltCards[i])
+  }
+
+  // ===================================================================
+  // BG ORBS MOUSE PARALLAX
+  // ===================================================================
+  var orbs = document.querySelectorAll('.bg-orb')
+  var orbSpeeds = [0.012, 0.02, 0.008, 0.025, 0.015]
+  if (orbs.length) {
+    document.addEventListener('mousemove', function (e) {
+      var x = (e.clientX / window.innerWidth - 0.5) * 2
+      var y = (e.clientY / window.innerHeight - 0.5) * 2
+      for (var i = 0; i < orbs.length; i++) {
+        var speed = orbSpeeds[i % orbSpeeds.length]
+        orbs[i].style.setProperty('--px', (x * speed * 120) + 'px')
+        orbs[i].style.setProperty('--py', (y * speed * 120) + 'px')
+      }
+    })
+  }
+
+  // ===================================================================
+  // CONTACT
+  // ===================================================================
+  var cttBtn = document.getElementById('ctt-btn')
+  if (cttBtn) {
+    cttBtn.addEventListener('click', function () {
+      var method = document.getElementById('ctt-method')
+      var purpose = document.getElementById('ctt-purpose')
+      if (!method || !purpose) return
+      var m = method.value
+      var p = purpose.value
+      var msgs = {
+        orcamento: 'Ola! Gostaria de solicitar um orcamento para um projeto.',
+        duvida: 'Ola! Tenho uma duvida tecnica.',
+        proposta: 'Ola! Gostaria de fazer uma proposta de trabalho.',
+        reuniao: 'Ola! Gostaria de agendar uma reuniao.',
+        outro: 'Ola! Gostaria de conversar sobre outro assunto.'
+      }
+      var text = msgs[p] || msgs.outro
+      if (m === 'whatsapp') {
+        window.open('https://wa.me/5571992227288?text=' + encodeURIComponent(text), '_blank')
+      } else {
+        window.open(
+          'https://mail.google.com/mail/?view=cm&fs=1&to=nzjr123@gmail.com&su=Contato%20-%20Portfolio&body=' + encodeURIComponent(text),
+          '_blank'
+        )
+      }
+    })
+  }
+
+})
